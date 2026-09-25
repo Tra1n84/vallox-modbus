@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "vallox-modbus"
+version = "0.1.0"
+description = "Read-only Vallox MV Modbus device library"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+authors = [{ name = "vallox-modbus contributors" }]
+dependencies = ["modbus-connection>=4.12.1"]
+
+[project.optional-dependencies]
+serial = ["modbus-connection[tmodbus]>=4.12.1"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=1.0",
+    "ruff>=0.13.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vallox_modbus"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["B", "E", "F", "I", "UP"]
