@@ -46,6 +46,9 @@ async def test_sensor_decoding(mock_modbus_unit) -> None:
     assert sensors.voc_sensor_0 == 1100
     assert sensors.voc_sensor_1 is None
     assert sensors.voc_sensor_3 == 1400
+    assert sensors.rh_sensors == (41, None, 43, 44, 45, 46)
+    assert sensors.co2_sensors == (500, None, 700, 800, 900, 1000)
+    assert sensors.voc_sensors == (1100, None, 1300, 1400)
 
 
 @pytest.mark.asyncio

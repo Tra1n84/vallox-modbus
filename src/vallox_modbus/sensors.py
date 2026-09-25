@@ -48,3 +48,40 @@ class ValloxSensors(Component):
     voc_sensor_1 = integer(4392, signed=False, nan=NO_SENSOR, unit="ppm")
     voc_sensor_2 = integer(4393, signed=False, nan=NO_SENSOR, unit="ppm")
     voc_sensor_3 = integer(4394, signed=False, nan=NO_SENSOR, unit="ppm")
+
+    @property
+    def rh_sensors(self) -> tuple[int | None, ...]:
+        """Humidity sensors 0..5."""
+
+        return (
+            self.rh_sensor_0,
+            self.rh_sensor_1,
+            self.rh_sensor_2,
+            self.rh_sensor_3,
+            self.rh_sensor_4,
+            self.rh_sensor_5,
+        )
+
+    @property
+    def co2_sensors(self) -> tuple[int | None, ...]:
+        """CO2 sensors 0..5."""
+
+        return (
+            self.co2_sensor_0,
+            self.co2_sensor_1,
+            self.co2_sensor_2,
+            self.co2_sensor_3,
+            self.co2_sensor_4,
+            self.co2_sensor_5,
+        )
+
+    @property
+    def voc_sensors(self) -> tuple[int | None, ...]:
+        """VOC sensors 0..3."""
+
+        return (
+            self.voc_sensor_0,
+            self.voc_sensor_1,
+            self.voc_sensor_2,
+            self.voc_sensor_3,
+        )

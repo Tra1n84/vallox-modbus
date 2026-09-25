@@ -39,6 +39,11 @@ def _print_row(label: str, value: str) -> None:
     print(f"{label + ':':28} {value}")
 
 
+def _print_indexed_rows(label: str, values: tuple[int | None, ...], unit: str) -> None:
+    for index, value in enumerate(values):
+        _print_row(f"{label} {index}", _value(value, unit))
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Query a Vallox MV Modbus RTU unit.")
     parser.add_argument("device", help="Serial device path, for example /dev/ttyUSB0")
@@ -47,6 +52,9 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--bytesize", type=int, default=8)
     parser.add_argument("--parity", default="E", choices=("N", "E", "O", "n", "e", "o"))
     parser.add_argument("--stopbits", type=int, default=1, choices=(1, 2))
+    parser.add_argument(
+        "--details", action="store_true", help="Print detailed readings"
+    )
     parser.add_argument("--settings", action="store_true", help="Also read settings")
     return parser.parse_args()
 
@@ -133,6 +141,29 @@ async def _async_main() -> int:
     _print_row("Boost remaining", _value(runtime.boost_timer, "min"))
     _print_row("Fireplace remaining", _value(runtime.fireplace_timer, "min"))
     _print_row("Extra remaining", _value(runtime.extra_timer, "min"))
+    if args.details:
+        inputs = device.inputs
+        sensors = device.sensors
+        print()
+        _print_row("Fireplace switch", _value(inputs.fireplace_switch))
+        _print_row("Digital input", _value(inputs.digital_input))
+        _print_row("Analog control input", _value(inputs.analog_control_input, "%"))
+        _print_row("Multisensor CO2 raw", _value(inputs.multisensor_co2_raw))
+        _print_row(
+            "Multisensor temperature raw",
+            _value(inputs.multisensor_temperature_raw),
+        )
+        _print_row("Multisensor humidity raw", _value(inputs.multisensor_humidity_raw))
+        print()
+        _print_row(
+            "Internal humidity sensor",
+            _value(sensors.internal_humidity_sensor, "%"),
+        )
+        _print_row("Optional temperature", _temperature(sensors.optional_temperature))
+        _print_row("VOC level", _value(sensors.voc_level, "ppm"))
+        _print_indexed_rows("RH sensor", sensors.rh_sensors, "%")
+        _print_indexed_rows("CO2 sensor", sensors.co2_sensors, "ppm")
+        _print_indexed_rows("VOC sensor", sensors.voc_sensors, "ppm")
     if args.settings:
         configuration = device.configuration
         settings = device.settings

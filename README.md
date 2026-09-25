@@ -107,6 +107,7 @@ print(device.runtime.heat_exchanger_state)
 await device.async_update_settings()
 print(device.settings.home_fan_speed)
 print(device.configuration.modbus_baudrate)
+print(device.sensors.rh_sensors)
 ```
 
 ## Diagnostic Query
@@ -124,8 +125,9 @@ uv run --extra serial python script/query.py \
 ```
 
 Defaults are unit `1`, baudrate `19200`, bytesize `8`, parity `E`, and stopbits
-`1`. Pass `--settings` to read and print the read-only settings component as
-well.
+`1`. Pass `--details` to print optional input and sensor readings. Pass
+`--settings` to read and print the read-only settings and configuration
+components as well.
 
 ## References
 
