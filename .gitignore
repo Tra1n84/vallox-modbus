@@ -4,7 +4,6 @@
 /.pytest_cache/
 /dist/
 /build/
-/docs/
 *.egg-info/
 __pycache__/
 *.py[cod]
