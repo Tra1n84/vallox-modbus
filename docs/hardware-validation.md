@@ -73,6 +73,8 @@ Write behavior notes:
   with FC06.
 - A direct FC16 write to register `20545` succeeded.
 - The library therefore uses FC16 for `fireplace_duration`.
+- `boost_duration` and `extra_duration` were validated without this FC16
+  workaround.
 - Runtime timer registers remained distinct from configured duration registers.
 
 Not yet hardware-validated:
