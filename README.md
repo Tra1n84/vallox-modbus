@@ -22,7 +22,7 @@ The library models the Vallox register map and expects the caller to provide a
 connection.
 
 ```text
-Application / Home Assistant
+Home Assistant
         |
         | provides Modbus unit
         v
