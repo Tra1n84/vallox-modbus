@@ -156,22 +156,31 @@ Current `vallox-modbus` status:
   lock
 - writes are unit-tested against exact Modbus register addresses and encoded
   raw values
-- hardware validation is still required before using these writes from Home
-  Assistant Core
+- most core writes have been hardware-validated on one Vallox ValloPlus 510 MV:
+  - Home/Away profile changes
+  - Boost, Fireplace, and Extra timers
+  - Away/Home/Boost fan speed settings
+  - Away/Home/Boost supply air temperature targets
+  - Boost, Fireplace, and Extra configured durations
+  - Extra fan and temperature settings
+- power on/off and bypass lock writes still need hardware validation before
+  being used from Home Assistant Core
 
-Suggested library implementation sequence:
+Suggested Core readiness sequence:
 
-1. Low-risk core control writes:
+1. Finish remaining hardware validation:
    - power on/off via documented system mode register
+   - bypass lock
+2. Map validated HA fan/number parity writes:
    - Home/Away profile changes
-2. Existing HA fan/number parity writes:
    - Home/Away/Boost fan speed settings
    - Home/Away/Boost supply air temperature targets
-3. Timer/action writes:
+3. Map validated timer/action writes where they fit the existing Core entity
+   model:
    - Boost timer
    - Fireplace timer
    - Extra timer
-4. Maintenance writes:
+4. Keep maintenance writes out until documented and validated:
    - filter reset only after documentation and hardware behavior are verified
 
 Do not add write support for registers whose semantics are unclear. Write APIs
@@ -288,8 +297,10 @@ proposal:
 - defer only risky or poorly documented actions
 
 The request should not frame Modbus as permanently read-only. It should frame
-read-only work as the foundation we already completed in the library, with
-validated writes as the next library milestone before the Core PR.
+read-only work as the foundation we already completed in the library, with most
+core writes already implemented, unit-tested, and hardware-validated. The
+remaining library validation items before Core use are power on/off and bypass
+lock writes.
 
 ## Open Questions
 
@@ -308,8 +319,8 @@ validated writes as the next library milestone before the Core PR.
 - Separate `vallox_modbus` Home Assistant integration/domain
 - HACS-only custom integration as the end goal
 - Arbitrary Modbus writes
-- Poorly documented profile/action writes
-- Boost, Fireplace, or Extra activation unless hardware validation is complete
+- Poorly documented or unvalidated profile/action writes
+- Any Boost, Fireplace, or Extra behavior beyond the validated timer writes
 - Weekly schedule management
 - Clock/time writes
 - Filter reset
