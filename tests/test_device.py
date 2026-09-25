@@ -53,6 +53,7 @@ async def test_device_updates_settings_separately(mock_modbus_unit) -> None:
     mock_modbus_unit.holding[20511] = [0, 1, 60, 29515]
     mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
     mock_modbus_unit.holding[20544] = [30, 15]
+    mock_modbus_unit.holding[20552] = 0
 
     device = ValloxDevice(mock_modbus_unit)
     report = await device.async_update_settings()
@@ -81,6 +82,7 @@ async def test_device_update_combines_readings_and_settings(mock_modbus_unit) ->
     mock_modbus_unit.holding[20511] = [0, 0, 60, 29515]
     mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
     mock_modbus_unit.holding[20544] = [30, 15]
+    mock_modbus_unit.holding[20552] = 0
 
     device = ValloxDevice(mock_modbus_unit)
     report = await device.async_update()

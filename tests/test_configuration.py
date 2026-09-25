@@ -16,6 +16,7 @@ async def test_configuration_decoding(mock_modbus_unit) -> None:
         HeaterType.ELECTRIC,
         HeaterType.WATER,
     ]
+    mock_modbus_unit.holding[20552] = 1
 
     configuration = ValloxConfiguration(mock_modbus_unit)
     await configuration.async_update()
@@ -38,6 +39,7 @@ async def test_configuration_decoding(mock_modbus_unit) -> None:
     assert configuration.heat_recovery_cell_type is HeatRecoveryCellType.ENTHALPY
     assert configuration.extra_heater_type is HeaterType.ELECTRIC
     assert configuration.post_heater_type is HeaterType.WATER
+    assert configuration.bypass_locked is True
 
 
 @pytest.mark.asyncio
@@ -45,6 +47,7 @@ async def test_configuration_unknown_frame_parts(mock_modbus_unit) -> None:
     mock_modbus_unit.holding[20482] = [1, 192, 0x0909, 0, 0, 0, 0]
     mock_modbus_unit.holding[20493] = [29315, 0, 0, 1]
     mock_modbus_unit.holding[20537] = [180, 0, 0, 0]
+    mock_modbus_unit.holding[20552] = 0
 
     configuration = ValloxConfiguration(mock_modbus_unit)
     await configuration.async_update()
@@ -58,6 +61,7 @@ async def test_configuration_reads_stay_inside_safe_ranges(mock_modbus_unit) -> 
     mock_modbus_unit.holding[20482] = [0] * 7
     mock_modbus_unit.holding[20493] = [0] * 4
     mock_modbus_unit.holding[20537] = [0] * 4
+    mock_modbus_unit.holding[20552] = 0
 
     configuration = ValloxConfiguration(mock_modbus_unit)
     await configuration.async_update()
@@ -66,6 +70,7 @@ async def test_configuration_reads_stay_inside_safe_ranges(mock_modbus_unit) -> 
         (20482, 7),
         (20493, 4),
         (20537, 4),
+        (20552, 1),
     ]
 
 
@@ -74,4 +79,5 @@ def test_configuration_register_ranges_are_explicit() -> None:
         (20482, 20488),
         (20493, 20496),
         (20537, 20540),
+        (20552, 20552),
     )

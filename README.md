@@ -5,10 +5,11 @@ through the Home Assistant `modbus-connection` architecture.
 
 ## Status
 
-Early development. Read-only.
+Early development. Read mostly, with narrowly scoped write support.
 
-This first version is intentionally read-only. Broad Vallox MV model
-compatibility has not yet been validated.
+Write support is limited to documented fan/profile, temperature target, and
+timer/duration registers. Broad Vallox MV model compatibility has not yet been
+validated.
 
 Hardware communication has been tested against one Vallox ValloPlus 510 MV
 installation over Modbus RTU with unit ID 1, 19200 baud, 8E1. Other Vallox MV
@@ -91,6 +92,17 @@ Configuration registers:
 - filter change interval
 - heat recovery cell and heater types
 
+Writable registers:
+
+- power on/off through documented system mode values
+- Home/Away basic profile
+- current Boost, Fireplace, and Extra timers
+- Away, Home, and Boost fan speed settings
+- Away, Home, and Boost supply air temperature targets
+- configured Boost, Fireplace, and Extra durations
+- Extra profile fan and supply air temperature settings
+- heat recovery cell bypass lock
+
 ## Polling Model
 
 `async_update_readings()` updates frequently changing values from the
@@ -100,6 +112,12 @@ measurements, runtime, inputs, and sensors components.
 configuration components.
 
 `async_update()` runs both groups and returns one combined update report.
+
+Write methods are exposed as explicit semantic operations on `ValloxDevice`,
+such as `async_set_power()`, `async_set_basic_profile()`,
+`async_set_home_fan_speed()`, and
+`async_set_home_air_temperature_target()`. The library does not expose a
+generic arbitrary register write API.
 
 ## Example
 

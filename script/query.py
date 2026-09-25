@@ -193,6 +193,7 @@ async def _async_main() -> int:
         )
         _print_row("Extra heater type", _enum_label(configuration.extra_heater_type))
         _print_row("Post heater type", _enum_label(configuration.post_heater_type))
+        _print_row("Bypass locked", _value(configuration.bypass_locked))
         print()
         _print_row("Away speed setting", _value(settings.away_fan_speed, "%"))
         _print_row("Home speed setting", _value(settings.home_fan_speed, "%"))
