@@ -7,6 +7,7 @@ from typing import Final
 from modbus_connection import ModbusUnit
 from modbus_connection.model import Device, UpdateReport
 
+from .configuration import ValloxConfiguration
 from .inputs import ValloxInputs
 from .measurements import ValloxMeasurements
 from .runtime import ValloxRuntime
@@ -21,6 +22,7 @@ VALLOX_MESSAGE_SPACING: Final = 0.15
 class ValloxDevice(Device):
     """Read-only Vallox MV device model."""
 
+    configuration: ValloxConfiguration
     inputs: ValloxInputs
     measurements: ValloxMeasurements
     runtime: ValloxRuntime
@@ -32,6 +34,7 @@ class ValloxDevice(Device):
         unit.require_timeout(VALLOX_TIMEOUT)
         unit.require_connect_delay(VALLOX_CONNECT_DELAY)
         unit.set_message_spacing(VALLOX_MESSAGE_SPACING)
+        self.configuration = ValloxConfiguration(unit)
         self.inputs = ValloxInputs(unit)
         self.measurements = ValloxMeasurements(unit)
         self.runtime = ValloxRuntime(unit)
@@ -48,7 +51,7 @@ class ValloxDevice(Device):
     ) -> UpdateReport:
         """Update configured profile settings."""
 
-        return await self.async_poll(("settings",), report)
+        return await self.async_poll(("settings", "configuration"), report)
 
     async def async_update(self) -> UpdateReport:
         """Update readings and settings in one report."""

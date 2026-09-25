@@ -10,6 +10,10 @@ Early development. Read-only.
 This first version is intentionally read-only. Broad Vallox MV model
 compatibility has not yet been validated.
 
+Hardware communication has been tested against one Vallox ValloPlus 510 MV
+installation over Modbus RTU with unit ID 1, 19200 baud, 8E1. Other Vallox MV
+models and firmware versions still need validation.
+
 ## Architecture
 
 The library models the Vallox register map and expects the caller to provide a
@@ -78,6 +82,15 @@ Settings registers:
 - Away, Home, and Boost supply air temperature targets
 - configured Boost and Fireplace durations
 
+Configuration registers:
+
+- Modbus address, baudrate, parity, and stop bits
+- fan balance base settings
+- fireplace and Extra profile fan settings
+- Extra profile supply air temperature target and duration
+- filter change interval
+- heat recovery cell and heater types
+
 ## Example
 
 ```python
@@ -93,6 +106,7 @@ print(device.runtime.heat_exchanger_state)
 
 await device.async_update_settings()
 print(device.settings.home_fan_speed)
+print(device.configuration.modbus_baudrate)
 ```
 
 ## Diagnostic Query

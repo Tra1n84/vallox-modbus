@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from vallox_modbus.configuration import ValloxConfiguration
 from vallox_modbus.device import (
     VALLOX_CONNECT_DELAY,
     VALLOX_MESSAGE_SPACING,
@@ -32,6 +33,7 @@ async def test_device_updates_readings(mock_modbus_unit) -> None:
 
     assert report.complete is True
     assert report.updated == {"inputs", "measurements", "runtime", "sensors"}
+    assert isinstance(device.configuration, ValloxConfiguration)
     assert isinstance(device.inputs, ValloxInputs)
     assert isinstance(device.measurements, ValloxMeasurements)
     assert isinstance(device.runtime, ValloxRuntime)
@@ -44,16 +46,20 @@ async def test_device_updates_readings(mock_modbus_unit) -> None:
 
 @pytest.mark.asyncio
 async def test_device_updates_settings_separately(mock_modbus_unit) -> None:
+    mock_modbus_unit.holding[20482] = [1, 192, 0x0101, 10, 11, 12, 13]
+    mock_modbus_unit.holding[20493] = [29315, 14, 15, 45]
     mock_modbus_unit.holding[20499] = [1, 0, 22, 29315]
     mock_modbus_unit.holding[20505] = [1, 1, 35, 29415]
     mock_modbus_unit.holding[20511] = [0, 1, 60, 29515]
+    mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
     mock_modbus_unit.holding[20544] = [30, 15]
 
     device = ValloxDevice(mock_modbus_unit)
     report = await device.async_update_settings()
 
     assert report.complete is True
-    assert report.updated == {"settings"}
+    assert report.updated == {"configuration", "settings"}
+    assert device.configuration.modbus_address == 1
     assert device.settings.away_fan_speed == 22
     assert device.settings.home_fan_speed == 35
     assert device.settings.boost_fan_speed == 60
@@ -68,9 +74,12 @@ async def test_device_update_combines_readings_and_settings(mock_modbus_unit) ->
     mock_modbus_unit.holding[4372] = [0] * 13
     mock_modbus_unit.holding[4389] = [0] * 6
     mock_modbus_unit.holding[4609] = [0] * 13
+    mock_modbus_unit.holding[20482] = [1, 192, 0x0101, 10, 11, 12, 13]
+    mock_modbus_unit.holding[20493] = [29315, 14, 15, 45]
     mock_modbus_unit.holding[20499] = [0, 0, 22, 29315]
     mock_modbus_unit.holding[20505] = [0, 0, 35, 29415]
     mock_modbus_unit.holding[20511] = [0, 0, 60, 29515]
+    mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
     mock_modbus_unit.holding[20544] = [30, 15]
 
     device = ValloxDevice(mock_modbus_unit)
@@ -83,6 +92,7 @@ async def test_device_update_combines_readings_and_settings(mock_modbus_unit) ->
         "runtime",
         "sensors",
         "settings",
+        "configuration",
     }
 
 

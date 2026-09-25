@@ -134,7 +134,34 @@ async def _async_main() -> int:
     _print_row("Fireplace remaining", _value(runtime.fireplace_timer, "min"))
     _print_row("Extra remaining", _value(runtime.extra_timer, "min"))
     if args.settings:
+        configuration = device.configuration
         settings = device.settings
+        print()
+        _print_row("Configured Modbus address", _value(configuration.modbus_address))
+        _print_row("Configured Modbus baudrate", _value(configuration.modbus_baudrate))
+        _print_row("Configured Modbus parity", _enum_label(configuration.modbus_parity))
+        _print_row(
+            "Configured Modbus stop bits",
+            _value(configuration.modbus_stop_bits),
+        )
+        _print_row(
+            "Extract fan balance base",
+            _value(configuration.extract_fan_balance_base, "%"),
+        )
+        _print_row(
+            "Supply fan balance base",
+            _value(configuration.supply_fan_balance_base, "%"),
+        )
+        _print_row(
+            "Filter change interval",
+            _value(configuration.filter_change_interval, "days"),
+        )
+        _print_row(
+            "Heat recovery cell type",
+            _enum_label(configuration.heat_recovery_cell_type),
+        )
+        _print_row("Extra heater type", _enum_label(configuration.extra_heater_type))
+        _print_row("Post heater type", _enum_label(configuration.post_heater_type))
         print()
         _print_row("Away speed setting", _value(settings.away_fan_speed, "%"))
         _print_row("Home speed setting", _value(settings.home_fan_speed, "%"))
@@ -156,6 +183,13 @@ async def _async_main() -> int:
             "Fireplace duration setting",
             _value(settings.fireplace_duration, "min"),
         )
+        _print_row(
+            "Extra temperature target",
+            _temperature(configuration.extra_air_temperature_target),
+        )
+        _print_row("Extra extract fan", _value(configuration.extra_extract_fan, "%"))
+        _print_row("Extra supply fan", _value(configuration.extra_supply_fan, "%"))
+        _print_row("Extra time setting", _value(configuration.extra_time, "min"))
     return 0
 
 
