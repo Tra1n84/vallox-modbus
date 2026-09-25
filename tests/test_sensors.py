@@ -34,6 +34,7 @@ async def test_sensor_decoding(mock_modbus_unit) -> None:
     sensors = ValloxSensors(mock_modbus_unit)
     await sensors.async_update()
 
+    assert sensors.internal_humidity_sensor_raw == 1922
     assert sensors.internal_humidity_sensor == pytest.approx(49.985)
     assert sensors.rh_sensor_0 == 41
     assert sensors.rh_sensor_1 is None
@@ -49,6 +50,25 @@ async def test_sensor_decoding(mock_modbus_unit) -> None:
     assert sensors.rh_sensors == (41, None, 43, 44, 45, 46)
     assert sensors.co2_sensors == (500, None, 700, 800, 900, 1000)
     assert sensors.voc_sensors == (1100, None, 1300, 1400)
+
+
+@pytest.mark.asyncio
+async def test_internal_humidity_out_of_range_is_unavailable(mock_modbus_unit) -> None:
+    mock_modbus_unit.holding[4372] = [56] + [NO_SENSOR] * 12
+    mock_modbus_unit.holding[4389] = [
+        29315,
+        0,
+        NO_SENSOR,
+        NO_SENSOR,
+        NO_SENSOR,
+        NO_SENSOR,
+    ]
+
+    sensors = ValloxSensors(mock_modbus_unit)
+    await sensors.async_update()
+
+    assert sensors.internal_humidity_sensor_raw == 56
+    assert sensors.internal_humidity_sensor is None
 
 
 @pytest.mark.asyncio

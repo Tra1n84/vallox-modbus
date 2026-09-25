@@ -16,14 +16,7 @@ class ValloxSensors(Component):
         (4389, 4394),
     )
 
-    internal_humidity_sensor = gauge(
-        4372,
-        100 / 2604,
-        offset=-(62039 / 2604),
-        signed=False,
-        nan=NO_SENSOR,
-        unit="%",
-    )
+    internal_humidity_sensor_raw = integer(4372, signed=False, nan=NO_SENSOR)
     rh_sensor_0 = integer(4373, signed=False, nan=NO_SENSOR, unit="%")
     rh_sensor_1 = integer(4374, signed=False, nan=NO_SENSOR, unit="%")
     rh_sensor_2 = integer(4375, signed=False, nan=NO_SENSOR, unit="%")
@@ -48,6 +41,17 @@ class ValloxSensors(Component):
     voc_sensor_1 = integer(4392, signed=False, nan=NO_SENSOR, unit="ppm")
     voc_sensor_2 = integer(4393, signed=False, nan=NO_SENSOR, unit="ppm")
     voc_sensor_3 = integer(4394, signed=False, nan=NO_SENSOR, unit="ppm")
+
+    @property
+    def internal_humidity_sensor(self) -> float | None:
+        """Internal humidity sensor value in percent."""
+
+        if self.internal_humidity_sensor_raw is None:
+            return None
+        value = (self.internal_humidity_sensor_raw * 100 - 62039) / 2604
+        if 0 <= value <= 100:
+            return value
+        return None
 
     @property
     def rh_sensors(self) -> tuple[int | None, ...]:
