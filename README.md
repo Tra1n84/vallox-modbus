@@ -1,7 +1,7 @@
 # vallox-modbus
 
-`vallox-modbus` is a Python library for reading Vallox MV ventilation units
-through the Home Assistant `modbus-connection` architecture.
+`vallox-modbus` is a Python library for reading and controlling Vallox MV
+ventilation units through the Home Assistant `modbus-connection` architecture.
 
 ## Status
 
