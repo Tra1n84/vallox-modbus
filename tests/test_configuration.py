@@ -33,7 +33,7 @@ async def test_configuration_decoding(mock_modbus_unit) -> None:
     assert configuration.extra_air_temperature_target == 20.0
     assert configuration.extra_extract_fan == 14
     assert configuration.extra_supply_fan == 15
-    assert configuration.extra_time == 45
+    assert configuration.extra_duration == 45
     assert configuration.filter_change_interval == 180
     assert configuration.heat_recovery_cell_type is HeatRecoveryCellType.ENTHALPY
     assert configuration.extra_heater_type is HeaterType.ELECTRIC

@@ -91,6 +91,16 @@ Configuration registers:
 - filter change interval
 - heat recovery cell and heater types
 
+## Polling Model
+
+`async_update_readings()` updates frequently changing values from the
+measurements, runtime, inputs, and sensors components.
+
+`async_update_settings()` updates slower changing values from the settings and
+configuration components.
+
+`async_update()` runs both groups and returns one combined update report.
+
 ## Example
 
 ```python

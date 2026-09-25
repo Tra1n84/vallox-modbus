@@ -33,7 +33,7 @@ class ValloxConfiguration(Component):
     )
     extra_extract_fan = integer(20494, signed=False, unit="%")
     extra_supply_fan = integer(20495, signed=False, unit="%")
-    extra_time = integer(20496, signed=False, unit="min")
+    extra_duration = integer(20496, signed=False, unit="min")
     filter_change_interval = integer(20537, signed=False, unit="days")
     heat_recovery_cell_type = enum(20538, HeatRecoveryCellType)
     extra_heater_type = enum(20539, HeaterType)

@@ -220,7 +220,9 @@ async def _async_main() -> int:
         )
         _print_row("Extra extract fan", _value(configuration.extra_extract_fan, "%"))
         _print_row("Extra supply fan", _value(configuration.extra_supply_fan, "%"))
-        _print_row("Extra time setting", _value(configuration.extra_time, "min"))
+        _print_row(
+            "Extra duration setting", _value(configuration.extra_duration, "min")
+        )
     return 0
 
 
