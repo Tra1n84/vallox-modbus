@@ -7,8 +7,8 @@ through the Home Assistant `modbus-connection` architecture.
 
 Early development. Read-only.
 
-This first version has not been validated against real hardware by this
-repository.
+This first version is intentionally read-only. Broad Vallox MV model
+compatibility has not yet been validated.
 
 ## Architecture
 
@@ -44,6 +44,13 @@ Measurement registers `4353..4364`:
 - humidity
 - CO2
 
+Input registers `4365..4370`:
+
+- fireplace switch
+- digital input
+- analog control input
+- raw multisensor values
+
 Runtime registers `4609..4621`:
 
 - basic profile
@@ -55,6 +62,21 @@ Runtime registers `4609..4621`:
 - total and current uptime
 - filter remaining
 - fault / limp state
+
+Optional sensor registers:
+
+- internal humidity sensor
+- RH sensors 0..5
+- CO2 sensors 0..5
+- optional temperature sensor
+- VOC level and VOC sensors 0..3
+
+Settings registers:
+
+- Away, Home, and Boost RH/CO2 control flags
+- Away, Home, and Boost fan speed settings
+- Away, Home, and Boost supply air temperature targets
+- configured Boost and Fireplace durations
 
 ## Example
 
@@ -68,6 +90,9 @@ print(device.measurements.outdoor_air_temperature)
 print(device.measurements.humidity)
 print(device.runtime.basic_profile)
 print(device.runtime.heat_exchanger_state)
+
+await device.async_update_settings()
+print(device.settings.home_fan_speed)
 ```
 
 ## Diagnostic Query
@@ -85,7 +110,8 @@ uv run --extra serial python script/query.py \
 ```
 
 Defaults are unit `1`, baudrate `19200`, bytesize `8`, parity `E`, and stopbits
-`1`.
+`1`. Pass `--settings` to read and print the read-only settings component as
+well.
 
 ## References
 

@@ -53,5 +53,5 @@ class ValloxMeasurements(Component):
     co2_level = enum(4360, SensorLevel)
     extract_fan_rpm = integer(4361, signed=False, unit="RPM")
     supply_fan_rpm = integer(4362, signed=False, unit="RPM")
-    humidity = integer(4363, signed=False, unit="%")
-    co2 = integer(4364, signed=False, unit="ppm")
+    humidity = integer(4363, signed=False, nan=0, unit="%")
+    co2 = integer(4364, signed=False, nan=0, unit="ppm")

@@ -1,0 +1,50 @@
+"""Read-only Vallox optional sensor registers."""
+
+from __future__ import annotations
+
+from modbus_connection.model import Component, gauge, integer
+
+NO_SENSOR = 65535
+
+
+class ValloxSensors(Component):
+    """Optional Vallox sensor values from documented holding registers."""
+
+    register_space = "holding"
+    register_ranges = (
+        (4372, 4384),
+        (4389, 4394),
+    )
+
+    internal_humidity_sensor = gauge(
+        4372,
+        100 / 2604,
+        offset=-(62039 / 2604),
+        signed=False,
+        nan=NO_SENSOR,
+        unit="%",
+    )
+    rh_sensor_0 = integer(4373, signed=False, nan=NO_SENSOR, unit="%")
+    rh_sensor_1 = integer(4374, signed=False, nan=NO_SENSOR, unit="%")
+    rh_sensor_2 = integer(4375, signed=False, nan=NO_SENSOR, unit="%")
+    rh_sensor_3 = integer(4376, signed=False, nan=NO_SENSOR, unit="%")
+    rh_sensor_4 = integer(4377, signed=False, nan=NO_SENSOR, unit="%")
+    rh_sensor_5 = integer(4378, signed=False, nan=NO_SENSOR, unit="%")
+    co2_sensor_0 = integer(4379, signed=False, nan=NO_SENSOR, unit="ppm")
+    co2_sensor_1 = integer(4380, signed=False, nan=NO_SENSOR, unit="ppm")
+    co2_sensor_2 = integer(4381, signed=False, nan=NO_SENSOR, unit="ppm")
+    co2_sensor_3 = integer(4382, signed=False, nan=NO_SENSOR, unit="ppm")
+    co2_sensor_4 = integer(4383, signed=False, nan=NO_SENSOR, unit="ppm")
+    co2_sensor_5 = integer(4384, signed=False, nan=NO_SENSOR, unit="ppm")
+    optional_temperature = gauge(
+        4389,
+        0.01,
+        offset=-273.15,
+        signed=False,
+        unit="°C",
+    )
+    voc_level = integer(4390, signed=False, unit="ppm")
+    voc_sensor_0 = integer(4391, signed=False, nan=NO_SENSOR, unit="ppm")
+    voc_sensor_1 = integer(4392, signed=False, nan=NO_SENSOR, unit="ppm")
+    voc_sensor_2 = integer(4393, signed=False, nan=NO_SENSOR, unit="ppm")
+    voc_sensor_3 = integer(4394, signed=False, nan=NO_SENSOR, unit="ppm")

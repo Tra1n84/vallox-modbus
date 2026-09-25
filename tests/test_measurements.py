@@ -56,3 +56,14 @@ async def test_measurement_read_uses_direct_addresses(mock_modbus_unit) -> None:
 
 def test_measurement_register_range_is_explicit() -> None:
     assert ValloxMeasurements.register_ranges == ((4353, 4364),)
+
+
+@pytest.mark.asyncio
+async def test_measurement_no_sensor_values(mock_modbus_unit) -> None:
+    mock_modbus_unit.holding[4353] = [0] * 12
+
+    measurements = ValloxMeasurements(mock_modbus_unit)
+    await measurements.async_update()
+
+    assert measurements.humidity is None
+    assert measurements.co2 is None
