@@ -56,5 +56,6 @@ class ValloxSettings(Component):
         20545,
         signed=False,
         writable=duration_minutes,
+        force_fc16=True,
         unit="min",
     )

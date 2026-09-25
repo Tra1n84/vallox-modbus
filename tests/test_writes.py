@@ -60,7 +60,7 @@ async def test_device_writes_profile_settings(mock_modbus_unit) -> None:
         (20508, [28615], 0x06),
         (20514, [28815], 0x06),
         (20544, [30], 0x06),
-        (20545, [15], 0x06),
+        (20545, [15], 0x10),
     ]
 
 
