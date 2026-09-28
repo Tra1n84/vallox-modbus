@@ -5,8 +5,7 @@ ventilation units through the Home Assistant `modbus-connection` architecture.
 
 ## Status
 
-Early development. The core read model and the main documented control writes
-are implemented.
+The core read model and the main documented control writes are implemented.
 
 Write support is intentionally scoped to semantic operations for profile
 selection, power, profile fan speeds, temperature targets, timers/durations,
