@@ -102,8 +102,9 @@ Modbus path:
 - Prefer using Home Assistant's current Modbus connection architecture.
 - Ask for Modbus connection details and unit ID in the config flow, then request
   a shared `ModbusUnit` from Home Assistant's Modbus infrastructure.
-- Validate by reading a small safe register group, probably readings
-  `4353..4364`.
+- Validate with `ValloxDevice.async_probe()`, which reads the measurements and
+  runtime register groups and performs conservative plausibility checks without
+  writing to the device.
 
 Reconfigure path:
 
