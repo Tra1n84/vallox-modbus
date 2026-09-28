@@ -14,8 +14,9 @@ need hardware validation. Broad Vallox MV model compatibility has not yet been
 validated.
 
 Hardware communication has been tested against one Vallox ValloPlus 510 MV
-installation over Modbus RTU with unit ID 1, 19200 baud, 8E1. Other Vallox MV
-models and firmware versions still need validation.
+installation over Modbus RTU with unit ID 1, 19200 baud, 8 data bits, even
+parity and 1 stop bit. Other Vallox MV models and firmware versions still need
+validation.
 
 ## Architecture
 
