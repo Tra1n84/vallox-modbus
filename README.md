@@ -108,6 +108,10 @@ Writable registers:
 
 ## Polling Model
 
+`ValloxDevice.async_probe()` validates a `modbus_connection.ModbusUnit` for
+setup flows by reading only the measurements and runtime register groups and
+checking a small set of live values for plausibility. It performs no writes.
+
 `async_update_readings()` updates frequently changing values from the
 measurements, runtime, inputs, and sensors components.
 
@@ -127,7 +131,7 @@ generic arbitrary register write API.
 ```python
 from vallox_modbus import ValloxDevice
 
-device = ValloxDevice(unit)
+device = await ValloxDevice.async_probe(unit)
 await device.async_update_readings()
 
 print(device.measurements.outdoor_air_temperature)

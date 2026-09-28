@@ -11,6 +11,7 @@ from .enums import (
     SensorLevel,
     SystemMode,
 )
+from .exceptions import ValloxConnectionError, ValloxError
 from .inputs import ValloxInputs
 from .measurements import ValloxMeasurements
 from .runtime import ValloxRuntime
@@ -26,7 +27,9 @@ __all__ = [
     "SensorLevel",
     "SystemMode",
     "ValloxConfiguration",
+    "ValloxConnectionError",
     "ValloxDevice",
+    "ValloxError",
     "ValloxInputs",
     "ValloxMeasurements",
     "ValloxRuntime",

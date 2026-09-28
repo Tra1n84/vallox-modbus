@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Final
 
-from modbus_connection import ModbusUnit
+from modbus_connection import ModbusError, ModbusUnit
 from modbus_connection.model import Device, UpdateReport
 
 from .configuration import ValloxConfiguration
 from .enums import BasicProfile, SystemMode
+from .exceptions import ValloxConnectionError, ValloxError
 from .inputs import ValloxInputs
 from .measurements import ValloxMeasurements
 from .runtime import ValloxRuntime
@@ -41,6 +42,51 @@ class ValloxDevice(Device):
         self.runtime = ValloxRuntime(unit)
         self.sensors = ValloxSensors(unit)
         self.settings = ValloxSettings(unit)
+
+    @classmethod
+    async def async_probe(cls, unit: ModbusUnit) -> ValloxDevice:
+        """Validate that a Modbus unit plausibly serves Vallox MV registers."""
+
+        device = cls(unit)
+        try:
+            report = await device.async_poll(("measurements", "runtime"))
+        except ModbusError as err:
+            raise ValloxConnectionError(str(err)) from err
+
+        if not report.complete:
+            error = next(iter(report.failed.values()))
+            raise ValloxConnectionError(str(error)) from error
+
+        device._validate_probe_values()
+        return device
+
+    def _validate_probe_values(self) -> None:
+        """Check a small set of live values for conservative plausibility."""
+
+        fan_speed = self.measurements.fan_speed
+        if fan_speed is None or not 0 <= fan_speed <= 100:
+            msg = f"fan speed is not plausible: {fan_speed!r}"
+            raise ValloxError(msg)
+
+        temperatures = (
+            self.measurements.extract_air_temperature,
+            self.measurements.exhaust_air_temperature,
+            self.measurements.outdoor_air_temperature,
+            self.measurements.supply_cell_air_temperature,
+            self.measurements.supply_air_temperature,
+        )
+        for temperature in temperatures:
+            if temperature is None or not -50.0 <= temperature <= 100.0:
+                msg = f"temperature is not plausible: {temperature!r}"
+                raise ValloxError(msg)
+
+        if self.runtime.basic_profile is None:
+            msg = "basic profile is not plausible"
+            raise ValloxError(msg)
+
+        if self.runtime.system_mode is None:
+            msg = "system mode is not plausible"
+            raise ValloxError(msg)
 
     async def async_update_readings(self) -> UpdateReport:
         """Update frequently changing measurement and runtime readings."""
