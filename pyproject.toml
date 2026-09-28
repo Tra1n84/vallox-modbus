@@ -25,6 +25,20 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/vallox_modbus"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "/.github/workflows/tests.yml",
+    "/docs",
+    "/planning",
+    "/script",
+    "/src",
+    "/tests",
+    "/LICENSE",
+    "/README.md",
+    "/pyproject.toml",
+    "/uv.lock",
+]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 
