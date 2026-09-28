@@ -5,10 +5,13 @@ ventilation units through the Home Assistant `modbus-connection` architecture.
 
 ## Status
 
-Early development. Read mostly, with narrowly scoped write support.
+Early development. The core read model and the main documented control writes
+are implemented.
 
-Write support is limited to documented fan/profile, temperature target, and
-timer/duration registers. Broad Vallox MV model compatibility has not yet been
+Write support is intentionally scoped to semantic operations for profile
+selection, power, profile fan speeds, temperature targets, timers/durations,
+Extra profile settings, and bypass lock. Power and bypass-lock writes still
+need hardware validation. Broad Vallox MV model compatibility has not yet been
 validated.
 
 Hardware communication has been tested against one Vallox ValloPlus 510 MV
