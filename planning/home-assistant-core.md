@@ -100,17 +100,16 @@ WebSocket path:
 Modbus path:
 
 - Prefer using Home Assistant's current Modbus connection architecture.
-- Ask for the existing Modbus hub/unit configuration in the style expected by
-  the current Home Assistant Modbus APIs.
+- Ask for Modbus connection details and unit ID in the config flow, then request
+  a shared `ModbusUnit` from Home Assistant's Modbus infrastructure.
 - Validate by reading a small safe register group, probably readings
   `4353..4364`.
 
 Reconfigure path:
 
 - For websocket entries: continue to reconfigure host.
-- For Modbus entries: reconfigure only values actually stored in the config
-  entry. Do not duplicate physical connection settings if Home Assistant owns
-  them elsewhere.
+- For Modbus entries: reconfigure stored connection details and unit ID. Do not
+  create a separate bus/hub configuration model inside the Vallox integration.
 
 ## Coordinator Proposal
 
@@ -221,8 +220,8 @@ Disabled by default / diagnostic:
 
 Fan entity:
 
-- The Modbus backend should expose the fan entity once the library supports the
-  same core fan controls as the websocket backend:
+- The Modbus backend should expose the fan entity through the same core fan
+  controls as the websocket backend, backed by the semantic library methods:
   - on/off
   - Home/Away preset selection, and additional profiles only when protocol
     behavior is verified
@@ -231,7 +230,7 @@ Fan entity:
 Numbers/switches:
 
 - Expose number entities for the same temperature targets as the websocket
-  backend after write support is validated in `vallox-modbus`.
+  backend using the validated temperature target write methods.
 - Keep risky or poorly documented switch/action entities out of the first Core
   PR even if lower-level library methods exist.
 
@@ -304,9 +303,6 @@ lock writes.
 
 ## Open Questions
 
-- How should Home Assistant expose a shared Modbus unit to an integration in the
-  current Core API?
-- Should Modbus entries store a Modbus hub reference, unit ID, or both?
 - Can the existing `vallox` entity descriptions be reused with a backend value
   accessor, or is a Modbus-specific entity set clearer?
 - Which Modbus fan controls are required in the first Core PR for acceptable
