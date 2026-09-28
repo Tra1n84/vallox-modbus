@@ -188,7 +188,7 @@ register writes.
 
 ## Entity Mapping V1
 
-Map stable read-only Modbus data and validated core control writes first.
+Map stable Modbus readings and validated core control writes first.
 
 Enabled by default:
 
@@ -296,7 +296,7 @@ proposal:
 - defer only risky or poorly documented actions
 
 The request should not frame Modbus as permanently read-only. It should frame
-read-only work as the foundation we already completed in the library, with most
+the read model as the foundation we already completed in the library, with most
 core writes already implemented, unit-tested, and hardware-validated. The
 remaining library validation items before Core use are power on/off and bypass
 lock writes.

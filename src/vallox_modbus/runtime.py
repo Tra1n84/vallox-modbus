@@ -1,4 +1,4 @@
-"""Read-only Vallox runtime state registers."""
+"""Vallox runtime state registers."""
 
 from __future__ import annotations
 

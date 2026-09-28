@@ -21,7 +21,7 @@ VALLOX_MESSAGE_SPACING: Final = 0.15
 
 
 class ValloxDevice(Device):
-    """Read-only Vallox MV device model."""
+    """Vallox MV device model."""
 
     configuration: ValloxConfiguration
     inputs: ValloxInputs

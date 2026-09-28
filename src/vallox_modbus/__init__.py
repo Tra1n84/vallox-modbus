@@ -1,4 +1,4 @@
-"""Read-only Vallox MV Modbus device library."""
+"""Vallox MV Modbus device library."""
 
 from .configuration import ValloxConfiguration
 from .device import ValloxDevice

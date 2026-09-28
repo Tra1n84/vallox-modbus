@@ -157,8 +157,8 @@ uv run --extra serial python script/query.py \
 
 Defaults are unit `1`, baudrate `19200`, bytesize `8`, parity `E`, and stopbits
 `1`. Pass `--details` to print optional input and sensor readings. Pass
-`--settings` to read and print the read-only settings and configuration
-components as well.
+`--settings` to read and print the settings and configuration components as
+well.
 
 ## References
 

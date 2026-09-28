@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "vallox-modbus"
 version = "0.1.0"
-description = "Read-only Vallox MV Modbus device library"
+description = "Vallox MV Modbus device library"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

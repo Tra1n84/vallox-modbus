@@ -1,4 +1,4 @@
-"""Read-only Vallox setting registers."""
+"""Vallox setting registers."""
 
 from __future__ import annotations
 
