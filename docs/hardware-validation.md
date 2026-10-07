@@ -37,6 +37,8 @@ Observed read behavior:
 - Home/Away basic profile, normal system mode, fault state, defrost state, fan
   speed, temperatures, humidity, fan RPM, heat exchanger state, filter
   remaining, and timers decoded plausibly.
+- Automatic basic profile is documented for register `4609` as value `2`, but
+  was not observed on this installation during validation.
 - `CO2 level: No Sensor` was observed with raw CO2 value `0`; the library maps
   that CO2 value to unavailable.
 - Internal humidity sensor raw value `56` decoded to an impossible negative
@@ -80,6 +82,7 @@ Write behavior notes:
 Not yet hardware-validated:
 
 - `async_set_power()`
+- `async_set_basic_profile(BasicProfile.AUTOMATIC)`
 - `async_set_bypass_locked()`
 
 Scope:

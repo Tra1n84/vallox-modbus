@@ -151,13 +151,14 @@ used from Home Assistant Core.
 
 Current `vallox-modbus` status:
 
-- explicit semantic write methods exist for power, Home/Away profile, timers,
-  profile fan speeds, profile temperature targets, Extra settings, and bypass
-  lock
+- explicit semantic write methods exist for power, Home/Away/Automatic profile,
+  timers, profile fan speeds, profile temperature targets, Extra settings, and
+  bypass lock
 - writes are unit-tested against exact Modbus register addresses and encoded
   raw values
 - most core writes have been hardware-validated on one Vallox ValloPlus 510 MV:
   - Home/Away profile changes
+  - Automatic profile changes still need hardware validation
   - Boost, Fireplace, and Extra timers
   - Away/Home/Boost fan speed settings
   - Away/Home/Boost supply air temperature targets
@@ -173,6 +174,7 @@ Suggested Core readiness sequence:
    - bypass lock
 2. Map validated HA fan/number parity writes:
    - Home/Away profile changes
+   - Automatic profile changes after hardware validation
    - Home/Away/Boost fan speed settings
    - Home/Away/Boost supply air temperature targets
 3. Map validated timer/action writes where they fit the existing Core entity
@@ -224,8 +226,8 @@ Fan entity:
 - The Modbus backend should expose the fan entity through the same core fan
   controls as the websocket backend, backed by the semantic library methods:
   - on/off
-  - Home/Away preset selection, and additional profiles only when protocol
-    behavior is verified
+  - Home/Away preset selection, plus Automatic once hardware behavior is
+    verified
   - percentage writes through documented profile speed settings
 
 Numbers/switches:

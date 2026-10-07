@@ -8,6 +8,7 @@ class BasicProfile(IntEnum):
 
     HOME = 0
     AWAY = 1
+    AUTOMATIC = 2
 
 
 class HeatExchangerState(IntEnum):

@@ -24,6 +24,7 @@ async def test_device_writes_runtime_controls(mock_modbus_unit) -> None:
     await device.async_set_power(False)
     await device.async_set_power(True)
     await device.async_set_basic_profile(BasicProfile.AWAY)
+    await device.async_set_basic_profile(BasicProfile.AUTOMATIC)
     await device.async_set_boost_timer(10)
     await device.async_set_fireplace_timer(20)
     await device.async_set_extra_timer(30)
@@ -32,6 +33,7 @@ async def test_device_writes_runtime_controls(mock_modbus_unit) -> None:
         (4610, [5], 0x06),
         (4610, [0], 0x06),
         (4609, [1], 0x06),
+        (4609, [2], 0x06),
         (4612, [10], 0x06),
         (4613, [20], 0x06),
         (4614, [30], 0x06),
@@ -95,6 +97,7 @@ async def test_device_writes_extra_settings(mock_modbus_unit) -> None:
         ("async_set_boost_duration", 0),
         ("async_set_fireplace_duration", 0),
         ("async_set_boost_timer", -1),
+        ("async_set_basic_profile", 3),
         ("async_set_bypass_locked", 1),
     ],
 )

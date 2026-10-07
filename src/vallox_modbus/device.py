@@ -115,7 +115,7 @@ class ValloxDevice(Device):
         )
 
     async def async_set_basic_profile(self, profile: BasicProfile) -> None:
-        """Set the basic Home/Away profile."""
+        """Set the basic Home/Away/Automatic profile."""
 
         await self.runtime.write("basic_profile", profile)
 
