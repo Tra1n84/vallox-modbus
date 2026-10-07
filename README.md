@@ -61,7 +61,7 @@ Input registers `4365..4370`:
 
 Runtime registers `4609..4621`:
 
-- basic profile
+- basic profile: Home, Away, or Automatic on firmware that supports Automatic
 - system mode
 - defrosting state
 - Boost, Fireplace, and Extra runtime timers
@@ -98,7 +98,7 @@ Configuration registers:
 Writable registers:
 
 - power on/off through documented system mode values
-- Home/Away basic profile
+- Home/Away/Automatic basic profile
 - current Boost, Fireplace, and Extra timers
 - Away, Home, and Boost fan speed settings
 - Away, Home, and Boost supply air temperature targets

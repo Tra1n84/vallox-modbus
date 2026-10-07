@@ -12,6 +12,7 @@ from vallox_modbus.runtime import ValloxRuntime
     [
         (0, BasicProfile.HOME),
         (1, BasicProfile.AWAY),
+        (2, BasicProfile.AUTOMATIC),
     ],
 )
 async def test_basic_profile_decoding(mock_modbus_unit, raw, profile) -> None:
@@ -47,7 +48,7 @@ async def test_heat_exchanger_state_decoding(mock_modbus_unit, raw, state) -> No
 @pytest.mark.asyncio
 async def test_runtime_decoding(mock_modbus_unit) -> None:
     mock_modbus_unit.holding[4609] = [
-        BasicProfile.AWAY,
+        BasicProfile.AUTOMATIC,
         SystemMode.OFF,
         1,
         10,
@@ -65,7 +66,7 @@ async def test_runtime_decoding(mock_modbus_unit) -> None:
     runtime = ValloxRuntime(mock_modbus_unit)
     await runtime.async_update()
 
-    assert runtime.basic_profile is BasicProfile.AWAY
+    assert runtime.basic_profile is BasicProfile.AUTOMATIC
     assert runtime.system_mode is SystemMode.OFF
     assert runtime.defrosting is True
     assert runtime.boost_timer == 10
