@@ -9,8 +9,39 @@ description = "Vallox MV Modbus device library"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"
-authors = [{ name = "vallox-modbus contributors" }]
+license-files = ["LICENSE"]
+authors = [{ name = "Tra1n84" }]
+maintainers = [{ name = "Tra1n84" }]
+keywords = [
+    "asyncio",
+    "home-assistant",
+    "home-automation",
+    "hvac",
+    "modbus",
+    "vallox",
+    "ventilation",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Home Automation",
+    "Topic :: System :: Hardware",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = ["modbus-connection>=4.12.1"]
+
+[project.urls]
+Homepage = "https://github.com/Tra1n84/vallox-modbus"
+Source = "https://github.com/Tra1n84/vallox-modbus"
+Issues = "https://github.com/Tra1n84/vallox-modbus/issues"
 
 [project.optional-dependencies]
 serial = ["modbus-connection[tmodbus]>=4.12.1"]
@@ -29,7 +60,6 @@ packages = ["src/vallox_modbus"]
 include = [
     "/.github/workflows/tests.yml",
     "/docs",
-    "/planning",
     "/script",
     "/src",
     "/tests",
