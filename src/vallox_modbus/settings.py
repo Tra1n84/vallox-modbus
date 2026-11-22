@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from modbus_connection.model import Component, boolean, gauge, integer
 
 from .validators import air_temperature_target, duration_minutes, percent
@@ -15,7 +17,7 @@ class ValloxSettings(Component):
         (20499, 20502),
         (20505, 20508),
         (20511, 20514),
-        (20544, 20545),
+        (20544, 20548),
     )
 
     away_rh_control_enabled = boolean(20499)
@@ -59,3 +61,26 @@ class ValloxSettings(Component):
         force_fc16=True,
         unit="min",
     )
+    filter_changed_day = integer(20546, signed=False)
+    filter_changed_month = integer(20547, signed=False)
+    filter_changed_year = integer(20548, signed=False)
+
+    @property
+    def filter_change_date(self) -> date | None:
+        """Last filter change date.
+
+        The year register holds two digits (0..99) and is read as 2000 + YY.
+        Returns None if a value is missing or the stored date is invalid.
+        """
+
+        day = self.filter_changed_day
+        month = self.filter_changed_month
+        year = self.filter_changed_year
+        if day is None or month is None or year is None:
+            return None
+        if not 0 <= year <= 99:
+            return None
+        try:
+            return date(2000 + year, month, day)
+        except ValueError:
+            return None

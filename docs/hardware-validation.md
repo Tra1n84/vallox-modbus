@@ -85,8 +85,85 @@ Write behavior notes:
 
 Not yet hardware-validated:
 
-- `async_set_basic_profile(BasicProfile.AUTOMATIC)`
+- `async_set_basic_profile(BasicProfile.AUTOMATIC)`; register `4609` is
+  documented for `0..1` only
 - `async_set_bypass_locked()`
+- `async_set_profile()` write sequences for every profile:
+  - Home, Away, and Automatic: `4609`, then `4612`, `4613`, `4614` = `0`
+  - Boost, Fireplace, and Extra with an explicit duration, with `65535`, and
+    with the configured duration read from `20544`, `20545`, or `20496`
+  - transitions while another timed profile is active
+- Timer switch writes to `21766`, `21767`, and `21772` (FC06), used by
+  `async_set_profile()` for an explicit duration. FC06 timed out on `20545`
+  during earlier validation, so FC06 acceptance on these registers is open.
+- Timer switch reads from `21766..21767` and `21772`
+- Filter change date reads from `20546..20548`, including whether the year
+  register holds `YY` of `20YY`
+- Filter change date writes; the library does not implement them
+
+## Validation Checklist
+
+Not yet executed. Run only against an installation where changing the profile
+is acceptable, note the initial state first, and restore it afterwards. Refresh
+with `await device.async_update()` after each step and compare the unit's own
+user interface.
+
+Setup and reads:
+
+```python
+device = ValloxDevice(unit)
+await device.async_update()
+device.runtime.basic_profile, device.profile, device.remaining_profile_duration
+device.timer_switches.boost_timer_enabled
+device.timer_switches.fireplace_timer_enabled
+device.timer_switches.extra_timer_enabled
+device.settings.filter_change_date, device.next_filter_change_date
+```
+
+- [ ] Timer switches and filter change date match the user interface.
+- [ ] `async_update_readings()` reports `timer_switches` as updated.
+
+Automatic profile:
+
+- [ ] `await device.async_set_basic_profile(BasicProfile.AUTOMATIC)`; `4609`
+  reads `2` and the user interface shows Automatic, or the write is rejected.
+- [ ] `await device.async_set_profile(Profile.AUTOMATIC)`; same check, timers
+  `4612..4614` read `0`.
+- [ ] Restore with `await device.async_set_profile(Profile.HOME)` or `AWAY`.
+
+Bypass lock:
+
+- [ ] `await device.async_set_bypass_locked(True)`; `20552` reads `1` and the
+  user interface shows the bypass locked.
+- [ ] `await device.async_set_bypass_locked(False)`; restore the initial value.
+
+Profile sequence:
+
+- [ ] `await device.async_set_profile(Profile.BOOST, 2)`; profile Boost, timer
+  `2`, `21766` reads `1`, timer counts down, unit returns to the basic profile.
+- [ ] `await device.async_set_profile(Profile.FIREPLACE, 2)`; same checks with
+  `4613` and `21767`.
+- [ ] `await device.async_set_profile(Profile.EXTRA, 2)`; same checks with
+  `4614` and `21772`.
+- [ ] `await device.async_set_profile(Profile.BOOST)`; timer equals the
+  configured Boost duration and `21766` is unchanged. Repeat for Fireplace and
+  Extra.
+- [ ] `await device.async_set_profile(Profile.BOOST, 65535)`; profile stays
+  active, `remaining_profile_duration` is `None`.
+- [ ] With Fireplace active, `await device.async_set_profile(Profile.BOOST, 2)`;
+  the unit changes to Boost without showing the basic profile in between.
+- [ ] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
+  and `Profile.AWAY`; all timers read `0`.
+- [ ] Record whether FC06 writes to `21766`, `21767`, and `21772` succeed.
+
+Filter change date write (diagnostic only, no library API):
+
+- [ ] Note the current values of `20546..20548`.
+- [ ] Write a test date with a raw diagnostic call, for example
+  `await unit.write_registers(20546, [day, month, year - 2000])`, and confirm
+  it in the user interface. Record whether FC16 and FC06 are accepted.
+- [ ] Check whether the write also changes `4620` remaining filter days.
+- [ ] Restore the noted values.
 
 Scope:
 

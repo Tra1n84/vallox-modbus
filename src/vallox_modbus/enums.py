@@ -11,6 +11,21 @@ class BasicProfile(IntEnum):
     AUTOMATIC = 2
 
 
+class Profile(IntEnum):
+    """Effective Vallox ventilation profile.
+
+    The values are library identifiers, not Modbus register values. Translate
+    to and from other profile enums by meaning, never by integer value.
+    """
+
+    HOME = 0
+    AWAY = 1
+    AUTOMATIC = 2
+    BOOST = 3
+    FIREPLACE = 4
+    EXTRA = 5
+
+
 class HeatExchangerState(IntEnum):
     """Vallox heat exchanger cell state from register 4616."""
 

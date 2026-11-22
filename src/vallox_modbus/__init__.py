@@ -8,15 +8,22 @@ from .enums import (
     HeatExchangerState,
     HeatRecoveryCellType,
     ModbusParity,
+    Profile,
     SensorLevel,
     SystemMode,
 )
-from .exceptions import ValloxConnectionError, ValloxError
+from .exceptions import (
+    ValloxConnectionError,
+    ValloxError,
+    ValloxInvalidInputError,
+    ValloxPartialWriteError,
+)
 from .inputs import ValloxInputs
 from .measurements import ValloxMeasurements
 from .runtime import ValloxRuntime
 from .sensors import ValloxSensors
 from .settings import ValloxSettings
+from .timer_switches import ValloxTimerSwitches
 
 __all__ = [
     "BasicProfile",
@@ -24,15 +31,19 @@ __all__ = [
     "HeatRecoveryCellType",
     "HeaterType",
     "ModbusParity",
+    "Profile",
     "SensorLevel",
     "SystemMode",
     "ValloxConfiguration",
     "ValloxConnectionError",
     "ValloxDevice",
     "ValloxError",
+    "ValloxInvalidInputError",
     "ValloxInputs",
     "ValloxMeasurements",
+    "ValloxPartialWriteError",
     "ValloxRuntime",
     "ValloxSensors",
     "ValloxSettings",
+    "ValloxTimerSwitches",
 ]
