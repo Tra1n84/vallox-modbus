@@ -65,6 +65,7 @@ Validated write paths:
 - `async_set_extra_extract_fan(50)`
 - `async_set_extra_supply_fan(50)`
 - `async_set_basic_profile()` by switching Away -> Home -> Away
+- `async_set_power()` by switching normal operation off -> on
 - `async_set_boost_timer()` by setting the current timer 0 -> 1 -> 0
 - `async_set_fireplace_timer()` by setting the current timer 0 -> 1 -> 0
 - `async_set_extra_timer()` by setting the current timer 0 -> 1 -> 0
@@ -78,10 +79,12 @@ Write behavior notes:
 - `boost_duration` and `extra_duration` were validated without this FC16
   workaround.
 - Runtime timer registers remained distinct from configured duration registers.
+- `async_set_power(False)` set system mode to `Off`, fan speed to `0 %`, and
+  extract and supply fan speeds to `0 RPM`.
+- `async_set_power(True)` restored system mode to `Normal`.
 
 Not yet hardware-validated:
 
-- `async_set_power()`
 - `async_set_basic_profile(BasicProfile.AUTOMATIC)`
 - `async_set_bypass_locked()`
 

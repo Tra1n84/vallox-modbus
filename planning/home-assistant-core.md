@@ -114,6 +114,11 @@ Reconfigure path:
 
 ## Coordinator Proposal
 
+See [Backend Compatibility Assessment](backend-compatibility.md) for the
+current client/data contract, entity coverage, profile semantics and remaining
+library work. Reusing entities requires an adapter and explicit capability
+handling; matching client method names alone is insufficient.
+
 The current integration has one `ValloxDataUpdateCoordinator` whose data type is
 websocket metric data. Modbus will likely need either:
 
