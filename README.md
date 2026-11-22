@@ -18,6 +18,19 @@ installation over Modbus RTU with unit ID 1, 19200 baud, 8 data bits, even
 parity and 1 stop bit. Other Vallox MV models and firmware versions still need
 validation.
 
+## Installation
+
+```bash
+pip install vallox-modbus
+```
+
+For a serial transport, for example to run the diagnostic script from a source
+checkout, install the optional `serial` extra:
+
+```bash
+pip install "vallox-modbus[serial]"
+```
+
 ## Architecture
 
 The library models the Vallox register map and expects the caller to provide a
