@@ -9,9 +9,9 @@ The core read model and the main documented control writes are implemented.
 
 Write support is intentionally scoped to semantic operations for profile
 selection, power, profile fan speeds, temperature targets, timers/durations,
-Extra profile settings, and bypass lock. Power and bypass-lock writes still
-need hardware validation. Broad Vallox MV model compatibility has not yet been
-validated.
+Extra profile settings, and bypass lock. Bypass-lock and Automatic profile
+writes still need hardware validation. Broad Vallox MV model compatibility has
+not yet been validated.
 
 Hardware communication has been tested against one Vallox ValloPlus 510 MV
 installation over Modbus RTU with unit ID 1, 19200 baud, 8 data bits, even
