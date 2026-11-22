@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import date
+
 import pytest
 
 from vallox_modbus.configuration import ValloxConfiguration
@@ -27,12 +29,20 @@ async def test_device_updates_readings(mock_modbus_unit) -> None:
     mock_modbus_unit.holding[4389] = [0] * 6
     mock_modbus_unit.holding[4609] = [0] * 13
     mock_modbus_unit.holding[4609] = BasicProfile.HOME
+    mock_modbus_unit.holding[21766] = [1, 0]
+    mock_modbus_unit.holding[21772] = 1
 
     device = ValloxDevice(mock_modbus_unit)
     report = await device.async_update_readings()
 
     assert report.complete is True
-    assert report.updated == {"inputs", "measurements", "runtime", "sensors"}
+    assert report.updated == {
+        "inputs",
+        "measurements",
+        "runtime",
+        "sensors",
+        "timer_switches",
+    }
     assert isinstance(device.configuration, ValloxConfiguration)
     assert isinstance(device.inputs, ValloxInputs)
     assert isinstance(device.measurements, ValloxMeasurements)
@@ -42,6 +52,9 @@ async def test_device_updates_readings(mock_modbus_unit) -> None:
     assert device.measurements.fan_speed == 42
     assert device.measurements.extract_air_temperature == 20.0
     assert device.runtime.basic_profile is BasicProfile.HOME
+    assert device.timer_switches.boost_timer_enabled is True
+    assert device.timer_switches.fireplace_timer_enabled is False
+    assert device.timer_switches.extra_timer_enabled is True
 
 
 @pytest.mark.asyncio
@@ -52,7 +65,7 @@ async def test_device_updates_settings_separately(mock_modbus_unit) -> None:
     mock_modbus_unit.holding[20505] = [1, 1, 35, 29415]
     mock_modbus_unit.holding[20511] = [0, 1, 60, 29515]
     mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
-    mock_modbus_unit.holding[20544] = [30, 15]
+    mock_modbus_unit.holding[20544] = [30, 15, 1, 2, 26]
     mock_modbus_unit.holding[20552] = 0
 
     device = ValloxDevice(mock_modbus_unit)
@@ -66,6 +79,7 @@ async def test_device_updates_settings_separately(mock_modbus_unit) -> None:
     assert device.settings.boost_fan_speed == 60
     assert device.settings.boost_duration == 30
     assert device.settings.fireplace_duration == 15
+    assert device.settings.filter_change_date == date(2026, 2, 1)
 
 
 @pytest.mark.asyncio
@@ -75,13 +89,15 @@ async def test_device_update_combines_readings_and_settings(mock_modbus_unit) ->
     mock_modbus_unit.holding[4372] = [0] * 13
     mock_modbus_unit.holding[4389] = [0] * 6
     mock_modbus_unit.holding[4609] = [0] * 13
+    mock_modbus_unit.holding[21766] = [0, 0]
+    mock_modbus_unit.holding[21772] = 0
     mock_modbus_unit.holding[20482] = [1, 192, 0x0101, 10, 11, 12, 13]
     mock_modbus_unit.holding[20493] = [29315, 14, 15, 45]
     mock_modbus_unit.holding[20499] = [0, 0, 22, 29315]
     mock_modbus_unit.holding[20505] = [0, 0, 35, 29415]
     mock_modbus_unit.holding[20511] = [0, 0, 60, 29515]
     mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
-    mock_modbus_unit.holding[20544] = [30, 15]
+    mock_modbus_unit.holding[20544] = [30, 15, 1, 2, 26]
     mock_modbus_unit.holding[20552] = 0
 
     device = ValloxDevice(mock_modbus_unit)
@@ -93,6 +109,7 @@ async def test_device_update_combines_readings_and_settings(mock_modbus_unit) ->
         "measurements",
         "runtime",
         "sensors",
+        "timer_switches",
         "settings",
         "configuration",
     }
@@ -120,3 +137,32 @@ def test_device_sets_vallox_timing_requirements() -> None:
     assert unit.timeout == VALLOX_TIMEOUT
     assert unit.connect_delay == VALLOX_CONNECT_DELAY
     assert unit.message_spacing == VALLOX_MESSAGE_SPACING
+
+
+@pytest.mark.asyncio
+async def test_device_next_filter_change_date(mock_modbus_unit) -> None:
+    mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
+    mock_modbus_unit.holding[20544] = [30, 15, 20, 11, 26]
+
+    device = ValloxDevice(mock_modbus_unit)
+    assert device.next_filter_change_date is None
+
+    await device.settings.async_update()
+    assert device.settings.filter_change_date == date(2026, 11, 20)
+    assert device.next_filter_change_date is None
+
+    await device.configuration.async_update()
+    assert device.next_filter_change_date == date(2027, 5, 19)
+
+
+@pytest.mark.asyncio
+async def test_device_next_filter_change_date_needs_valid_date(
+    mock_modbus_unit,
+) -> None:
+    mock_modbus_unit.holding[20537] = [180, 0, 1, 2]
+    mock_modbus_unit.holding[20544] = [30, 15, 31, 2, 26]
+
+    device = ValloxDevice(mock_modbus_unit)
+    await device.async_update_settings()
+
+    assert device.next_filter_change_date is None
