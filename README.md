@@ -9,10 +9,10 @@ The core read model and the main documented control writes are implemented.
 
 Write support is intentionally scoped to semantic operations for profile
 selection, power, profile fan speeds, temperature targets, timers/durations,
-Extra profile settings, and bypass lock. Bypass-lock and Automatic profile
-writes, the coordinated `async_set_profile()` sequence, and timer switch writes
-still need hardware validation. Broad Vallox MV model compatibility has not yet
-been validated.
+Extra profile settings, and bypass lock. Bypass-lock writes, the coordinated
+`async_set_profile()` sequence for Home, Away and the timed profiles, and timer
+switch writes still need hardware validation. Broad Vallox MV model
+compatibility has not yet been validated.
 
 Hardware communication has been tested against one Vallox ValloPlus 510 MV
 installation over Modbus RTU with unit ID 1, 19200 baud, 8 data bits, even
@@ -75,8 +75,7 @@ Input registers `4365..4370`:
 
 Runtime registers `4609..4621`:
 
-- basic profile: Home, Away, or Automatic on firmware that supports Automatic
-  (Automatic, value `2`, is not documented in the Vallox Modbus manual)
+- basic profile: Home, Away, or Automatic
 - system mode
 - defrosting state
 - Boost, Fireplace, and Extra runtime timers
@@ -163,8 +162,8 @@ Filter change date writes are not supported.
 - The target timer is written first, so the unit does not fall back to the
   basic profile between writes. The timer switch follows, so the requested
   profile is complete before competing timers are cleared.
-- Automatic (`4609` = `2`) is not documented in the Vallox Modbus manual and is
-  not hardware-validated.
+- Automatic (`4609` = `2`) is documented in the Vallox Modbus manual and is
+  hardware-validated.
 
 The writes are not atomic. Other Modbus masters and the unit's own user
 interfaces can change the state in between; the library only serializes its own

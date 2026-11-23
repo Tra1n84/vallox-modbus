@@ -39,7 +39,7 @@ effects. A class named `Vallox` alone would not satisfy that contract.
 | --- | --- | --- |
 | Power | System mode and power setter | Hardware off/on is confirmed in the current local validation notes. |
 | Home/Away presets | `profile` and `async_set_profile()` | The sequence clears active timed profiles; hardware validation of the sequence remains open. |
-| Auto preset | `Profile.AUTOMATIC` / `BasicProfile.AUTOMATIC` read/write | Value `2` is not documented in the Vallox Modbus manual; hardware validation remains open. |
+| Auto preset | `Profile.AUTOMATIC` / `BasicProfile.AUTOMATIC` read/write | Value `2` is documented in the Vallox Modbus manual; read and write validated on hardware. |
 | Boost/Fireplace/Extra presets | `profile` and `async_set_profile()` | Individual timer writes are validated; the coordinated sequence and timer switch writes are not. |
 | Fan percentage / profile speed attributes | Current fan speed and three profile settings | Core fan percentage uses the configured profile speed; the separate speed sensor uses live fan speed. Preserve this distinction. |
 | Five main air temperatures, humidity, CO2, fan RPM | Measurement component | Preserve units and unavailable values. |
@@ -124,8 +124,8 @@ into a false state, and device identity is required during entity setup.
   Vallox Modbus manual; hardware read test first.
 - Post-heater activity: `A_CYC_IO_HEATER` (`4868`) is not in the Vallox Modbus
   manual; hardware read test first.
-- Hardware validation of Automatic, bypass lock, the `async_set_profile()`
-  sequence, timer switch writes, and a filter change date write.
+- Hardware validation of bypass lock, the `async_set_profile()` sequence, timer
+  switch writes, and a filter change date write.
 - Filter change date write API, after hardware validation.
 
 No adapter or Home Assistant integration code is implemented by this document.
