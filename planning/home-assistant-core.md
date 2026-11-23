@@ -163,7 +163,7 @@ Current `vallox-modbus` status:
   raw values
 - most core writes have been hardware-validated on one Vallox ValloPlus 510 MV:
   - Home/Away profile changes
-  - Automatic profile changes still need hardware validation
+  - Automatic profile changes
   - Boost, Fireplace, and Extra timers
   - Away/Home/Boost fan speed settings
   - Away/Home/Boost supply air temperature targets
@@ -179,7 +179,7 @@ Suggested Core readiness sequence:
    - bypass lock
 2. Map validated HA fan/number parity writes:
    - Home/Away profile changes
-   - Automatic profile changes after hardware validation
+   - Automatic profile changes
    - Home/Away/Boost fan speed settings
    - Home/Away/Boost supply air temperature targets
 3. Map validated timer/action writes where they fit the existing Core entity
@@ -231,8 +231,7 @@ Fan entity:
 - The Modbus backend should expose the fan entity through the same core fan
   controls as the websocket backend, backed by the semantic library methods:
   - on/off
-  - Home/Away preset selection, plus Automatic once hardware behavior is
-    verified
+  - Home/Away/Automatic preset selection
   - percentage writes through documented profile speed settings
 
 Numbers/switches:

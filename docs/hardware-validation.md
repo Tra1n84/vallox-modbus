@@ -37,8 +37,8 @@ Observed read behavior:
 - Home/Away basic profile, normal system mode, fault state, defrost state, fan
   speed, temperatures, humidity, fan RPM, heat exchanger state, filter
   remaining, and timers decoded plausibly.
-- Automatic basic profile is documented for register `4609` as value `2`, but
-  was not observed on this installation during validation.
+- Automatic basic profile (`4609` = `2`) was observed on this installation and
+  shown as Automatic by the unit's user interface.
 - `CO2 level: No Sensor` was observed with raw CO2 value `0`; the library maps
   that CO2 value to unavailable.
 - Internal humidity sensor raw value `56` decoded to an impossible negative
@@ -69,6 +69,9 @@ Validated write paths:
 - `async_set_boost_timer()` by setting the current timer 0 -> 1 -> 0
 - `async_set_fireplace_timer()` by setting the current timer 0 -> 1 -> 0
 - `async_set_extra_timer()` by setting the current timer 0 -> 1 -> 0
+- `async_set_basic_profile(BasicProfile.AUTOMATIC)`; `4609` reads `2`
+- `async_set_profile(Profile.AUTOMATIC)`; `4609` reads `2`, timers
+  `4612..4614` read `0`
 
 Write behavior notes:
 
@@ -85,11 +88,9 @@ Write behavior notes:
 
 Not yet hardware-validated:
 
-- `async_set_basic_profile(BasicProfile.AUTOMATIC)`; register `4609` is
-  documented for `0..1` only
 - `async_set_bypass_locked()`
 - `async_set_profile()` write sequences for every profile:
-  - Home, Away, and Automatic: `4609`, then `4612`, `4613`, `4614` = `0`
+  - Home and Away: `4609`, then `4612`, `4613`, `4614` = `0`
   - Boost, Fireplace, and Extra with an explicit duration, with `65535`, and
     with the configured duration read from `20544`, `20545`, or `20496`
   - transitions while another timed profile is active
@@ -103,7 +104,7 @@ Not yet hardware-validated:
 
 ## Validation Checklist
 
-Not yet executed. Run only against an installation where changing the profile
+Partly executed. Run only against an installation where changing the profile
 is acceptable, note the initial state first, and restore it afterwards. Refresh
 with `await device.async_update()` after each step and compare the unit's own
 user interface.
@@ -125,11 +126,11 @@ device.settings.filter_change_date, device.next_filter_change_date
 
 Automatic profile:
 
-- [ ] `await device.async_set_basic_profile(BasicProfile.AUTOMATIC)`; `4609`
+- [x] `await device.async_set_basic_profile(BasicProfile.AUTOMATIC)`; `4609`
   reads `2` and the user interface shows Automatic, or the write is rejected.
-- [ ] `await device.async_set_profile(Profile.AUTOMATIC)`; same check, timers
+- [x] `await device.async_set_profile(Profile.AUTOMATIC)`; same check, timers
   `4612..4614` read `0`.
-- [ ] Restore with `await device.async_set_profile(Profile.HOME)` or `AWAY`.
+- [x] Restore with `await device.async_set_profile(Profile.HOME)` or `AWAY`.
 
 Bypass lock:
 

@@ -323,8 +323,8 @@ class ValloxDevice(Device):
 
         Home, Away and Automatic write the basic profile register 4609 and then
         set the Boost, Fireplace and Extra timers 4612..4614 to 0. Automatic
-        (4609 = 2) is not documented in the Vallox Modbus manual (which lists
-        0..1 only) and has not been validated on hardware.
+        (4609 = 2) is documented in the Vallox Modbus manual and has been
+        validated on hardware.
 
         Boost, Fireplace and Extra first write the target timer, then, for an
         explicit ``duration`` other than 65535, set the profile's timer switch
@@ -389,8 +389,8 @@ class ValloxDevice(Device):
     async def async_set_basic_profile(self, profile: BasicProfile) -> None:
         """Set the basic Home/Away/Automatic profile.
 
-        Automatic (4609 = 2) is not documented in the Vallox Modbus manual,
-        which lists 0..1 only, and has not been validated on hardware.
+        Automatic (4609 = 2) is documented in the Vallox Modbus manual and has
+        been validated on hardware.
         """
 
         await self._async_write(self.runtime, "basic_profile", profile)
