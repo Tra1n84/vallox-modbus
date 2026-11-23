@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Iterable
 from datetime import date, timedelta
 from typing import Any, Final
 
-from modbus_connection import ModbusError, ModbusUnit
+from modbus_connection import (
+    ModbusConnectionError,
+    ModbusError,
+    ModbusTimeoutError,
+    ModbusUnit,
+)
 from modbus_connection.model import Component, Device, UpdateReport
 
 from .configuration import ValloxConfiguration
@@ -131,19 +137,66 @@ class ValloxDevice(Device):
             msg = "system mode is not plausible"
             raise ValloxError(msg)
 
-    async def async_update_readings(self) -> UpdateReport:
-        """Update frequently changing measurement and runtime readings."""
+    async def _async_poll_with_retry(
+        self, names: Iterable[str], report: UpdateReport | None = None
+    ) -> UpdateReport:
+        """Poll like ``async_poll()``, but read a timed-out component once more.
 
-        return await self.async_poll(
+        A component whose read raises ``ModbusTimeoutError`` is read again
+        once; only a second timeout counts. Otherwise the semantics of
+        ``async_poll()`` apply: ``ModbusConnectionError`` propagates at once,
+        ``ModbusTimeoutError`` propagates only while nothing has answered yet,
+        every other ``ModbusError`` lands in ``failed``, and listeners fire
+        after all reads.
+        """
+
+        await self.async_ensure_setup()
+        if report is None:
+            report = UpdateReport()
+        updated: list[str] = []
+        for name in names:
+            component = getattr(self, name)
+            if component is None:
+                continue
+            try:
+                try:
+                    await component.async_update(notify=False)
+                except ModbusTimeoutError:
+                    await component.async_update(notify=False)
+            except ModbusConnectionError:
+                raise
+            except ModbusTimeoutError as err:
+                if not report.updated and not report.failed:
+                    raise
+                report.failed[name] = err
+            except ModbusError as err:
+                report.failed[name] = err
+            else:
+                report.updated.add(name)
+                updated.append(name)
+        for name in updated:
+            getattr(self, name).notify()
+        return report
+
+    async def async_update_readings(self) -> UpdateReport:
+        """Update frequently changing measurement and runtime readings.
+
+        A component that times out is read once more before it is reported.
+        """
+
+        return await self._async_poll_with_retry(
             ("measurements", "runtime", "inputs", "sensors", "timer_switches")
         )
 
     async def async_update_settings(
         self, report: UpdateReport | None = None
     ) -> UpdateReport:
-        """Update configured profile settings."""
+        """Update configured profile settings.
 
-        return await self.async_poll(("settings", "configuration"), report)
+        A component that times out is read once more before it is reported.
+        """
+
+        return await self._async_poll_with_retry(("settings", "configuration"), report)
 
     async def async_update(self) -> UpdateReport:
         """Update readings and settings in one report."""

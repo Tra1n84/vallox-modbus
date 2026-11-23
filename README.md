@@ -199,6 +199,12 @@ configuration components.
 
 `async_update()` runs both groups and returns one combined update report.
 
+Both groups read a component once more if its read times out, so a single
+lost response does not fail it. Only a second timeout counts. As with
+`Device.async_poll()`, a timeout then raises `ModbusTimeoutError` while nothing
+in the poll has answered yet, and is recorded in the report's `failed`
+otherwise. Other Modbus errors are not retried.
+
 Write methods are exposed as explicit semantic operations on `ValloxDevice`,
 such as `async_set_power()`, `async_set_profile()`,
 `async_set_basic_profile()`,
