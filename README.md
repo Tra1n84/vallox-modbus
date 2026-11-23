@@ -169,8 +169,10 @@ The writes are not atomic. Other Modbus masters and the unit's own user
 interfaces can change the state in between; the library only serializes its own
 profile changes. Invalid input raises `ValloxInvalidInputError` before anything
 is written. A failure while reading the configured duration raises
-`ValloxConnectionError` before anything is written. A failed write raises
-`ValloxPartialWriteError` (a `ValloxConnectionError`); earlier writes may
+`ValloxConnectionError` before anything is written. Timed-out requests are
+retried first, see [Request Retries](#request-retries). A write that still
+fails raises `ValloxPartialWriteError` (a `ValloxConnectionError`); earlier
+writes may
 already be applied, `completed` lists the acknowledged register addresses, and
 `failed` names the register whose write failed and may or may not have been
 applied. Refresh the readings after any error.
@@ -180,7 +182,8 @@ applied. Refresh the readings after any error.
 All public `async_set_*` methods and `async_set_profile()` raise
 `ValloxInvalidInputError` for invalid values and `ValloxConnectionError` for
 Modbus communication errors, with the original `modbus_connection` error as
-the cause. `ValloxInvalidInputError` is also a `ValueError`.
+the cause. A timed-out write is retried before it raises.
+`ValloxInvalidInputError` is also a `ValueError`.
 
 ## Polling Model
 
@@ -198,11 +201,37 @@ configuration components.
 
 `async_update()` runs both groups and returns one combined update report.
 
-Both groups read a component once more if its read times out, so a single
-lost response does not fail it. Only a second timeout counts. As with
-`Device.async_poll()`, a timeout then raises `ModbusTimeoutError` while nothing
-in the poll has answered yet, and is recorded in the report's `failed`
-otherwise. Other Modbus errors are not retried.
+Both groups follow `Device.async_poll()`: `ModbusConnectionError` raises at
+once, a `ModbusTimeoutError` raises while nothing in the poll has answered yet
+and is recorded in the report's `failed` otherwise, and every other Modbus
+error is recorded in `failed`.
+
+## Request Retries
+
+`modbus-connection` sends every request once. Single Modbus RTU responses can
+get lost on a real installation, so `ValloxDevice` resends each individual
+request that raises `ModbusTimeoutError`, up to 3 times
+(`VALLOX_REQUEST_RETRIES`, as in the Home Assistant YAML Modbus integration).
+One request is therefore sent at most 4 times. This applies to every read,
+every write, and every step of `async_set_profile()`, including the read of
+the configured duration.
+
+- Only `ModbusTimeoutError` is retried. `ModbusConnectionError`, Modbus
+  exception responses such as `IllegalDataAddressError`, and protocol errors
+  are not.
+- Every write the library sends is a single FC06 or FC16 request that sets an
+  absolute value; there are no read-modify-write, increment, or toggle writes.
+  Resending a write whose response was lost therefore leaves the same state.
+- Retries happen per request, not per component, so a component with several
+  read blocks only resends the block that timed out.
+- If the device does not answer at all, a poll gives up after the first request
+  has used its retries and raises `ModbusTimeoutError`. With the 5 second
+  timeout this takes about 20 seconds.
+- `ValloxPartialWriteError` is raised only if a step of a profile change still
+  fails after its retries.
+- Each retry is logged at debug level on the `vallox_modbus.retry` logger with
+  function, register, and attempt, for example
+  `write_register(4612, 0) timed out, retrying (attempt 2 of 4): ...`.
 
 Write methods are exposed as explicit semantic operations on `ValloxDevice`,
 such as `async_set_power()`, `async_set_profile()`,

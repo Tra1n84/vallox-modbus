@@ -3,16 +3,10 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterable
 from datetime import date, timedelta
-from typing import Any, Final
+from typing import Any, Final, cast
 
-from modbus_connection import (
-    ModbusConnectionError,
-    ModbusError,
-    ModbusTimeoutError,
-    ModbusUnit,
-)
+from modbus_connection import ModbusError, ModbusUnit
 from modbus_connection.model import Component, Device, UpdateReport
 
 from .configuration import ValloxConfiguration
@@ -25,6 +19,7 @@ from .exceptions import (
 )
 from .inputs import ValloxInputs
 from .measurements import ValloxMeasurements
+from .retry import TimeoutRetryingUnit
 from .runtime import ValloxRuntime
 from .sensors import ValloxSensors
 from .settings import ValloxSettings
@@ -34,6 +29,9 @@ from .validators import MAX_DURATION, MIN_DURATION, duration_minutes
 VALLOX_TIMEOUT: Final = 5.0
 VALLOX_CONNECT_DELAY: Final = 0.5
 VALLOX_MESSAGE_SPACING: Final = 0.15
+# Resends of a timed-out request, as with the Home Assistant YAML Modbus
+# integration's default of 3 retries.
+VALLOX_REQUEST_RETRIES: Final = 3
 
 NO_TIME_LIMIT: Final = 65535
 
@@ -83,13 +81,19 @@ class ValloxDevice(Device):
         unit.require_timeout(VALLOX_TIMEOUT)
         unit.require_connect_delay(VALLOX_CONNECT_DELAY)
         unit.set_message_spacing(VALLOX_MESSAGE_SPACING)
-        self.configuration = ValloxConfiguration(unit)
-        self.inputs = ValloxInputs(unit)
-        self.measurements = ValloxMeasurements(unit)
-        self.runtime = ValloxRuntime(unit)
-        self.sensors = ValloxSensors(unit)
-        self.settings = ValloxSettings(unit)
-        self.timer_switches = ValloxTimerSwitches(unit)
+        # Every component reads and writes through this wrapper, so each
+        # single request is resent on a timeout.
+        request_unit = cast(
+            ModbusUnit, TimeoutRetryingUnit(unit, VALLOX_REQUEST_RETRIES)
+        )
+        self._request_unit = request_unit
+        self.configuration = ValloxConfiguration(request_unit)
+        self.inputs = ValloxInputs(request_unit)
+        self.measurements = ValloxMeasurements(request_unit)
+        self.runtime = ValloxRuntime(request_unit)
+        self.sensors = ValloxSensors(request_unit)
+        self.settings = ValloxSettings(request_unit)
+        self.timer_switches = ValloxTimerSwitches(request_unit)
         self._profile_lock = asyncio.Lock()
 
     @classmethod
@@ -137,54 +141,14 @@ class ValloxDevice(Device):
             msg = "system mode is not plausible"
             raise ValloxError(msg)
 
-    async def _async_poll_with_retry(
-        self, names: Iterable[str], report: UpdateReport | None = None
-    ) -> UpdateReport:
-        """Poll like ``async_poll()``, but read a timed-out component once more.
-
-        A component whose read raises ``ModbusTimeoutError`` is read again
-        once; only a second timeout counts. Otherwise the semantics of
-        ``async_poll()`` apply: ``ModbusConnectionError`` propagates at once,
-        ``ModbusTimeoutError`` propagates only while nothing has answered yet,
-        every other ``ModbusError`` lands in ``failed``, and listeners fire
-        after all reads.
-        """
-
-        await self.async_ensure_setup()
-        if report is None:
-            report = UpdateReport()
-        updated: list[str] = []
-        for name in names:
-            component = getattr(self, name)
-            if component is None:
-                continue
-            try:
-                try:
-                    await component.async_update(notify=False)
-                except ModbusTimeoutError:
-                    await component.async_update(notify=False)
-            except ModbusConnectionError:
-                raise
-            except ModbusTimeoutError as err:
-                if not report.updated and not report.failed:
-                    raise
-                report.failed[name] = err
-            except ModbusError as err:
-                report.failed[name] = err
-            else:
-                report.updated.add(name)
-                updated.append(name)
-        for name in updated:
-            getattr(self, name).notify()
-        return report
-
     async def async_update_readings(self) -> UpdateReport:
         """Update frequently changing measurement and runtime readings.
 
-        A component that times out is read once more before it is reported.
+        Each timed-out request is resent up to ``VALLOX_REQUEST_RETRIES``
+        times; otherwise the semantics of ``async_poll()`` apply.
         """
 
-        return await self._async_poll_with_retry(
+        return await self.async_poll(
             ("measurements", "runtime", "inputs", "sensors", "timer_switches")
         )
 
@@ -193,10 +157,11 @@ class ValloxDevice(Device):
     ) -> UpdateReport:
         """Update configured profile settings.
 
-        A component that times out is read once more before it is reported.
+        Each timed-out request is resent up to ``VALLOX_REQUEST_RETRIES``
+        times; otherwise the semantics of ``async_poll()`` apply.
         """
 
-        return await self._async_poll_with_retry(("settings", "configuration"), report)
+        return await self.async_poll(("settings", "configuration"), report)
 
     async def async_update(self) -> UpdateReport:
         """Update readings and settings in one report."""
@@ -266,7 +231,10 @@ class ValloxDevice(Device):
         return changed + timedelta(days=interval)
 
     async def _async_write(self, component: Component, field: str, value: Any) -> None:
-        """Write one field and translate validation and communication errors."""
+        """Write one field and translate validation and communication errors.
+
+        A timed-out write is resent before it counts as failed.
+        """
 
         try:
             await component.write(field, value)
@@ -280,11 +248,11 @@ class ValloxDevice(Device):
 
         reader: Component
         if profile is Profile.BOOST:
-            reader, field = ValloxSettings(self.modbus_unit), "boost_duration"
+            reader, field = ValloxSettings(self._request_unit), "boost_duration"
         elif profile is Profile.FIREPLACE:
-            reader, field = ValloxSettings(self.modbus_unit), "fireplace_duration"
+            reader, field = ValloxSettings(self._request_unit), "fireplace_duration"
         else:
-            reader, field = ValloxConfiguration(self.modbus_unit), "extra_duration"
+            reader, field = ValloxConfiguration(self._request_unit), "extra_duration"
         reader.restrict_fields((field,))
         try:
             await reader.async_update(notify=False)
@@ -299,7 +267,10 @@ class ValloxDevice(Device):
     async def _async_write_sequence(
         self, writes: list[tuple[Component, str, Any]]
     ) -> None:
-        """Write pre-validated fields in order and stop at the first failure."""
+        """Write pre-validated fields in order and stop at the first failure.
+
+        A write fails only once its timeout retries are used up.
+        """
 
         completed: list[int] = []
         for component, field, value in writes:
@@ -336,11 +307,13 @@ class ValloxDevice(Device):
         for Home, Away and Automatic.
 
         The writes are not atomic and other Modbus masters or user interfaces
-        can change the state in between. Raises ``ValloxInvalidInputError``
-        before writing anything for invalid input, ``ValloxConnectionError``
-        if the configured duration cannot be read, and
-        ``ValloxPartialWriteError`` if a write fails; earlier writes of the
-        sequence may already be applied.
+        can change the state in between. Each write sets an absolute value, so
+        a timed-out write is resent up to ``VALLOX_REQUEST_RETRIES`` times
+        before the sequence fails. Raises ``ValloxInvalidInputError`` before
+        writing anything for invalid input, ``ValloxConnectionError`` if the
+        configured duration cannot be read, and ``ValloxPartialWriteError`` if
+        a write still fails after its retries; earlier writes of the sequence
+        may already be applied.
         """
 
         profile = _require_profile(profile)

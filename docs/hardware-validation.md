@@ -86,6 +86,23 @@ Write behavior notes:
   extract and supply fan speeds to `0 RPM`.
 - `async_set_power(True)` restored system mode to `Normal`.
 
+Communication behavior:
+
+- In continuous Home Assistant operation, single requests regularly got no
+  response and failed with `Response timeout after 5.0 seconds`. All register
+  areas were affected, for example `read_holding_registers(4389, 6)`,
+  `(20493, 4)`, `(20505, 4)`, `(20511, 4)`, and `(21772, 1)`, as well as
+  `write_register(4612, 0)` during a Boost -> Away profile change, which then
+  raised `ValloxPartialWriteError`.
+- Even with one component-level retry, such failures occurred 8 times in 30
+  minutes.
+- The earlier Home Assistant YAML Modbus setup used pymodbus with 3 retries per
+  request, which hid these timeouts; `modbus-connection` sends every request
+  once.
+- The library therefore resends each timed-out request up to 3 times; see
+  "Request Retries" in the README. Retries are logged at debug level, so a poor
+  line stays visible.
+
 Not yet hardware-validated:
 
 - `async_set_bypass_locked()`
@@ -101,6 +118,8 @@ Not yet hardware-validated:
 - Filter change date reads from `20546..20548`, including whether the year
   register holds `YY` of `20YY`
 - Filter change date writes; the library does not implement them
+- Per-request timeout retries: whether they prevent the unavailable settings
+  and the partial profile changes observed above
 
 ## Validation Checklist
 
@@ -156,6 +175,15 @@ Profile sequence:
 - [ ] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
   and `Profile.AWAY`; all timers read `0`.
 - [ ] Record whether FC06 writes to `21766`, `21767`, and `21772` succeed.
+
+Request retries:
+
+- [ ] Enable debug logging for `vallox_modbus.retry` and run the Home Assistant
+  integration for at least 30 minutes; note how many retries are logged.
+- [ ] No settings or configuration entities become unavailable because of a
+  single timed-out request.
+- [ ] Repeat Boost -> Away profile changes; none raises
+  `ValloxPartialWriteError` unless the log shows 4 timed-out attempts.
 
 Filter change date write (diagnostic only, no library API):
 
