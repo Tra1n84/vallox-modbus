@@ -9,8 +9,9 @@ The core read model and the main documented control writes are implemented.
 
 Write support is intentionally scoped to semantic operations for profile
 selection, power, profile fan speeds, temperature targets, timers/durations,
-Extra profile settings, and bypass lock. Bypass-lock writes, the coordinated
-`async_set_profile()` sequence for Home, Away and the timed profiles, and timer
+Extra profile settings and bypass lock. The coordinated `async_set_profile()`
+sequence without a duration is hardware-validated for every profile.
+Bypass-lock writes, `async_set_profile()` with an explicit duration and timer
 switch writes still need hardware validation. Broad Vallox MV model
 compatibility has not yet been validated.
 
@@ -164,6 +165,10 @@ Filter change date writes are not supported.
   profile is complete before competing timers are cleared.
 - Automatic (`4609` = `2`) is documented in the Vallox Modbus manual and is
   hardware-validated.
+- Without `duration`, every profile is hardware-validated, including changes
+  between Boost and Fireplace and ending a timed profile with Home or Away.
+  While Extra is active, the MyVallox Control panel keeps showing the basic
+  mode with the programmable input symbol.
 
 The writes are not atomic. Other Modbus masters and the unit's own user
 interfaces can change the state in between; the library only serializes its own

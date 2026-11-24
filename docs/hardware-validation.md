@@ -103,18 +103,68 @@ Communication behavior:
   "Request Retries" in the README. Retries are logged at debug level, so a poor
   line stays visible.
 
+Fireplace profile and timer switch, observed on 2026-11-24 through the Home
+Assistant integration:
+
+- The MyVallox Control panel calls the Fireplace profile Custom mode. Its
+  supply and extract fan settings were 50 % and selecting Custom mode on the
+  panel made `profile` read Fireplace.
+- The panel has no separate timer switch. The first screen of the Custom mode
+  settings (Info, then the pen icon) is the timer function On/Off;
+  `remaining_profile_duration`, which reads register `21767`, followed it.
+- With the timer function Off, `async_set_profile(Profile.FIREPLACE)` without
+  a duration activated Fireplace and `remaining_profile_duration` was `None`.
+  The same held after activating Custom mode on the panel.
+- After the timer function was set On on the panel,
+  `async_set_profile(Profile.FIREPLACE)` without a duration activated Fireplace
+  and `remaining_profile_duration` showed the configured Fireplace duration
+  (`20545`).
+
+Profile changes, validated on 2026-11-24 with the fan presets of the Home
+Assistant integration, which call `async_set_profile(profile)` without a
+duration. Each change was confirmed on the unit and its MyVallox Control panel:
+
+- Home and Away: switching between them works.
+- Boost: ran for its configured duration of 15 minutes, showed the remaining
+  time and returned to the previous basic profile.
+- Fireplace: ran for its configured duration of 60 minutes, showed the
+  remaining time and returned to the previous basic profile.
+- Automatic: works, as validated earlier.
+- Boost -> Fireplace and Fireplace -> Boost: the unit changed to the selected
+  timed profile.
+- Selecting Home or Away while Boost or Fireplace was active ended the timed
+  profile.
+- Extra (programmable mode), started without a digital input: with the Extra
+  supply and extract fan settings at 70 %, the fans sped up from about 1500 and
+  1800 rpm to about 1800 and 2000 rpm. The panel kept showing the previous
+  basic mode (At Home) with the programmable input symbol, as the MyVallox
+  Control manual describes. Extra ran for its configured duration and
+  returned to the previous basic profile; selecting At Home also ended it.
+- No write errors were reported.
+
+The register values were not read directly; the observations come from the
+integration's state and the unit's user interface.
+
+Vallox Modbus manual note:
+
+- The register table of the Modbus manual D5269 describes `4613` as the
+  configured Custom timer time and `20545` as the decreasing current value.
+  The manual's introduction and its example "Activating the Custom mode for 15
+  minutes" use `4613` as the counting-down timer instead. The library follows
+  the introduction, which matches the observations above. The table makes the
+  same swap for Boost (`4612`, `20544`) and Programmable (`4614`, `20496`).
+
 Not yet hardware-validated:
 
 - `async_set_bypass_locked()`
-- `async_set_profile()` write sequences for every profile:
-  - Home and Away: `4609`, then `4612`, `4613`, `4614` = `0`
-  - Boost, Fireplace, and Extra with an explicit duration, with `65535`, and
-    with the configured duration read from `20544`, `20545`, or `20496`
-  - transitions while another timed profile is active
+- `async_set_profile()` write sequences not covered above:
+  - Boost, Fireplace and Extra with an explicit duration and with `65535`
+  - transitions between Extra and Boost or Fireplace
 - Timer switch writes to `21766`, `21767`, and `21772` (FC06), used by
   `async_set_profile()` for an explicit duration. FC06 timed out on `20545`
   during earlier validation, so FC06 acceptance on these registers is open.
-- Timer switch reads from `21766..21767` and `21772`
+- Timer switch reads from `21766` and `21772`; `21767` followed the panel's
+  Fireplace timer function as described above
 - Filter change date reads from `20546..20548`, including whether the year
   register holds `YY` of `20YY`
 - Filter change date writes; the library does not implement them
@@ -165,15 +215,18 @@ Profile sequence:
   `4613` and `21767`.
 - [ ] `await device.async_set_profile(Profile.EXTRA, 2)`; same checks with
   `4614` and `21772`.
-- [ ] `await device.async_set_profile(Profile.BOOST)`; timer equals the
-  configured Boost duration and `21766` is unchanged. Repeat for Fireplace and
-  Extra.
+- [x] `await device.async_set_profile(Profile.BOOST)`; timer equals the
+  configured Boost duration, counts down and the unit returns to the basic
+  profile. Repeat for Fireplace and Extra. Done, see above.
 - [ ] `await device.async_set_profile(Profile.BOOST, 65535)`; profile stays
   active, `remaining_profile_duration` is `None`.
 - [ ] With Fireplace active, `await device.async_set_profile(Profile.BOOST, 2)`;
   the unit changes to Boost without showing the basic profile in between.
-- [ ] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
-  and `Profile.AWAY`; all timers read `0`.
+- [x] With Fireplace active, `await device.async_set_profile(Profile.BOOST)`
+  and the reverse; the unit changes to the selected timed profile.
+- [x] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
+  and `Profile.AWAY`; the timed profile ends. The timers were not read
+  directly.
 - [ ] Record whether FC06 writes to `21766`, `21767`, and `21772` succeed.
 
 Request retries:
