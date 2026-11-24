@@ -118,7 +118,32 @@ Assistant integration:
 - After the timer function was set On on the panel,
   `async_set_profile(Profile.FIREPLACE)` without a duration activated Fireplace
   and `remaining_profile_duration` showed the configured Fireplace duration
-  (`20545`). Countdown and the return to the basic profile were not observed.
+  (`20545`).
+
+Profile changes, validated on 2026-11-24 with the fan presets of the Home
+Assistant integration, which call `async_set_profile(profile)` without a
+duration. Each change was confirmed on the unit and its MyVallox Control panel:
+
+- Home and Away: switching between them works.
+- Boost: ran for its configured duration of 15 minutes, showed the remaining
+  time, and returned to the previous basic profile.
+- Fireplace: ran for its configured duration of 60 minutes, showed the
+  remaining time, and returned to the previous basic profile.
+- Automatic: works, as validated earlier.
+- Boost -> Fireplace and Fireplace -> Boost: the unit changed to the selected
+  timed profile.
+- Selecting Home or Away while Boost or Fireplace was active ended the timed
+  profile.
+- No write errors were reported.
+- Extra: not validated. After `async_set_profile(Profile.EXTRA)`, `profile`
+  read Extra and `remaining_profile_duration` showed the configured Extra
+  duration (`20496`), so `4614` accepted the write, but the unit and its panel
+  did not change the mode. While `4614` is not `0`, `profile` therefore
+  reports Extra although the unit runs another mode. The programmable mode may
+  require a configured programmable input; this was not checked.
+
+The register values were not read directly; the observations come from the
+integration's state and the unit's user interface.
 
 Vallox Modbus manual note:
 
@@ -132,13 +157,10 @@ Vallox Modbus manual note:
 Not yet hardware-validated:
 
 - `async_set_bypass_locked()`
-- `async_set_profile()` write sequences for every profile:
-  - Home and Away: `4609`, then `4612`, `4613`, `4614` = `0`
-  - Boost, Fireplace, and Extra with an explicit duration, with `65535`, and
-    with the configured duration read from `20544`, `20545`, or `20496`;
-    Fireplace with the configured duration was activated, but its countdown
-    and the return to the basic profile were not observed
-  - transitions while another timed profile is active
+- `async_set_profile()` write sequences not covered above:
+  - Boost and Fireplace with an explicit duration and with `65535`
+  - Extra in every variant; see the observation above
+  - transitions into or out of Extra
 - Timer switch writes to `21766`, `21767`, and `21772` (FC06), used by
   `async_set_profile()` for an explicit duration. FC06 timed out on `20545`
   during earlier validation, so FC06 acceptance on these registers is open.
@@ -194,15 +216,19 @@ Profile sequence:
   `4613` and `21767`.
 - [ ] `await device.async_set_profile(Profile.EXTRA, 2)`; same checks with
   `4614` and `21772`.
-- [ ] `await device.async_set_profile(Profile.BOOST)`; timer equals the
-  configured Boost duration and `21766` is unchanged. Repeat for Fireplace and
-  Extra.
+- [x] `await device.async_set_profile(Profile.BOOST)`; timer equals the
+  configured Boost duration, counts down, and the unit returns to the basic
+  profile. Repeat for Fireplace. Done for Boost and Fireplace, see above.
+- [ ] Same for Extra; the unit did not change the mode, see above.
 - [ ] `await device.async_set_profile(Profile.BOOST, 65535)`; profile stays
   active, `remaining_profile_duration` is `None`.
 - [ ] With Fireplace active, `await device.async_set_profile(Profile.BOOST, 2)`;
   the unit changes to Boost without showing the basic profile in between.
-- [ ] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
-  and `Profile.AWAY`; all timers read `0`.
+- [x] With Fireplace active, `await device.async_set_profile(Profile.BOOST)`,
+  and the reverse; the unit changes to the selected timed profile.
+- [x] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
+  and `Profile.AWAY`; the timed profile ends. The timers were not read
+  directly.
 - [ ] Record whether FC06 writes to `21766`, `21767`, and `21772` succeed.
 
 Request retries:
