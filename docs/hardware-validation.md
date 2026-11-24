@@ -103,18 +103,47 @@ Communication behavior:
   "Request Retries" in the README. Retries are logged at debug level, so a poor
   line stays visible.
 
+Fireplace profile and timer switch, observed on 2026-11-24 through the Home
+Assistant integration:
+
+- The MyVallox Control panel calls the Fireplace profile Custom mode. Its
+  supply and extract fan settings were 50 %, and selecting Custom mode on the
+  panel made `profile` read Fireplace.
+- The panel has no separate timer switch. The first screen of the Custom mode
+  settings (Info, then the pen icon) is the timer function On/Off;
+  `remaining_profile_duration`, which reads register `21767`, followed it.
+- With the timer function Off, `async_set_profile(Profile.FIREPLACE)` without
+  a duration activated Fireplace and `remaining_profile_duration` was `None`.
+  The same held after activating Custom mode on the panel.
+- After the timer function was set On on the panel,
+  `async_set_profile(Profile.FIREPLACE)` without a duration activated Fireplace
+  and `remaining_profile_duration` showed the configured Fireplace duration
+  (`20545`). Countdown and the return to the basic profile were not observed.
+
+Vallox Modbus manual note:
+
+- The register table of the Modbus manual D5269 describes `4613` as the
+  configured Custom timer time and `20545` as the decreasing current value.
+  The manual's introduction and its example "Activating the Custom mode for 15
+  minutes" use `4613` as the counting-down timer instead. The library follows
+  the introduction, which matches the observations above. The table makes the
+  same swap for Boost (`4612`, `20544`) and Programmable (`4614`, `20496`).
+
 Not yet hardware-validated:
 
 - `async_set_bypass_locked()`
 - `async_set_profile()` write sequences for every profile:
   - Home and Away: `4609`, then `4612`, `4613`, `4614` = `0`
   - Boost, Fireplace, and Extra with an explicit duration, with `65535`, and
-    with the configured duration read from `20544`, `20545`, or `20496`
+    with the configured duration read from `20544`, `20545`, or `20496`;
+    Fireplace with the configured duration was activated, but its countdown
+    and the return to the basic profile were not observed
   - transitions while another timed profile is active
 - Timer switch writes to `21766`, `21767`, and `21772` (FC06), used by
   `async_set_profile()` for an explicit duration. FC06 timed out on `20545`
   during earlier validation, so FC06 acceptance on these registers is open.
-- Timer switch reads from `21766..21767` and `21772`
+- Timer switch reads from `21766` and `21772`; `21767` followed the panel's
+  Fireplace timer function as described above
 - Filter change date reads from `20546..20548`, including whether the year
   register holds `YY` of `20YY`
 - Filter change date writes; the library does not implement them
