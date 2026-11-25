@@ -130,8 +130,8 @@ duration. Each change was confirmed on the unit and its MyVallox Control panel:
 - Fireplace: ran for its configured duration of 60 minutes, showed the
   remaining time and returned to the previous basic profile.
 - Automatic: works, as validated earlier.
-- Boost -> Fireplace and Fireplace -> Boost: the unit changed to the selected
-  timed profile.
+- Changes between the timed profiles Boost, Fireplace and Extra: the unit
+  changed to the selected timed profile.
 - Selecting Home or Away while Boost or Fireplace was active ended the timed
   profile.
 - Extra (programmable mode), started without a digital input: with the Extra
@@ -141,6 +141,9 @@ duration. Each change was confirmed on the unit and its MyVallox Control panel:
   Control manual describes. Extra ran for its configured duration and
   returned to the previous basic profile; selecting At Home also ended it.
 - No write errors were reported.
+- While Boost and Extra ran, `remaining_profile_duration` showed the remaining
+  time, so the timer switches `21766` and `21772` were read as on. Their off
+  state was not observed.
 
 The register values were not read directly; the observations come from the
 integration's state and the unit's user interface.
@@ -159,12 +162,10 @@ Not yet hardware-validated:
 - `async_set_bypass_locked()`
 - `async_set_profile()` write sequences not covered above:
   - Boost, Fireplace and Extra with an explicit duration and with `65535`
-  - transitions between Extra and Boost or Fireplace
-- Timer switch writes to `21766`, `21767`, and `21772` (FC06), used by
+- Timer switch writes to `21766`, `21767` and `21772` (FC06), used by
   `async_set_profile()` for an explicit duration. FC06 timed out on `20545`
   during earlier validation, so FC06 acceptance on these registers is open.
-- Timer switch reads from `21766` and `21772`; `21767` followed the panel's
-  Fireplace timer function as described above
+- Timer switch reads of `21766` and `21772` in the off state
 - Filter change date reads from `20546..20548`, including whether the year
   register holds `YY` of `20YY`
 - Filter change date writes; the library does not implement them
@@ -190,8 +191,11 @@ device.timer_switches.extra_timer_enabled
 device.settings.filter_change_date, device.next_filter_change_date
 ```
 
-- [ ] Timer switches and filter change date match the user interface.
-- [ ] `async_update_readings()` reports `timer_switches` as updated.
+- [x] Timer switches match the user interface: `21767` off and on, `21766`
+  and `21772` on, see above.
+- [ ] Filter change date matches the user interface.
+- [x] `async_update_readings()` reports `timer_switches` as updated; the Home
+  Assistant profile duration sensor, which needs it, had values.
 
 Automatic profile:
 
@@ -222,8 +226,9 @@ Profile sequence:
   active, `remaining_profile_duration` is `None`.
 - [ ] With Fireplace active, `await device.async_set_profile(Profile.BOOST, 2)`;
   the unit changes to Boost without showing the basic profile in between.
-- [x] With Fireplace active, `await device.async_set_profile(Profile.BOOST)`
-  and the reverse; the unit changes to the selected timed profile.
+- [x] With one of Boost, Fireplace and Extra active,
+  `await device.async_set_profile()` with another of them; the unit changes to
+  the selected timed profile.
 - [x] With a timed profile active, `await device.async_set_profile(Profile.HOME)`
   and `Profile.AWAY`; the timed profile ends. The timers were not read
   directly.

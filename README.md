@@ -166,7 +166,7 @@ Filter change date writes are not supported.
 - Automatic (`4609` = `2`) is documented in the Vallox Modbus manual and is
   hardware-validated.
 - Without `duration`, every profile is hardware-validated, including changes
-  between Boost and Fireplace and ending a timed profile with Home or Away.
+  between the timed profiles and ending a timed profile with Home or Away.
   While Extra is active, the MyVallox Control panel keeps showing the basic
   mode with the programmable input symbol.
 
