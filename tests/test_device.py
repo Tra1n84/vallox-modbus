@@ -8,6 +8,7 @@ from vallox_modbus.configuration import ValloxConfiguration
 from vallox_modbus.device import (
     VALLOX_CONNECT_DELAY,
     VALLOX_MESSAGE_SPACING,
+    VALLOX_REQUEST_RETRIES,
     VALLOX_TIMEOUT,
     ValloxDevice,
 )
@@ -137,6 +138,13 @@ def test_device_sets_vallox_timing_requirements() -> None:
     assert unit.timeout == VALLOX_TIMEOUT
     assert unit.connect_delay == VALLOX_CONNECT_DELAY
     assert unit.message_spacing == VALLOX_MESSAGE_SPACING
+
+
+def test_request_timing_matches_hardware_validation() -> None:
+    # Validated on hardware; see docs/hardware-validation.md.
+    assert VALLOX_TIMEOUT == 1.0
+    assert VALLOX_MESSAGE_SPACING == 0.5
+    assert VALLOX_REQUEST_RETRIES == 5
 
 
 @pytest.mark.asyncio

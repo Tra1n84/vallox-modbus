@@ -26,12 +26,14 @@ from .settings import ValloxSettings
 from .timer_switches import ValloxTimerSwitches
 from .validators import MAX_DURATION, MIN_DURATION, duration_minutes
 
-VALLOX_TIMEOUT: Final = 5.0
+# The validated unit answers within about 15 ms but leaves some requests
+# unanswered for up to a few seconds (see docs/hardware-validation.md). A short
+# timeout with more resends recovers faster than a long one.
+VALLOX_TIMEOUT: Final = 1.0
 VALLOX_CONNECT_DELAY: Final = 0.5
-VALLOX_MESSAGE_SPACING: Final = 0.15
-# Resends of a timed-out request, as with the Home Assistant YAML Modbus
-# integration's default of 3 retries.
-VALLOX_REQUEST_RETRIES: Final = 3
+VALLOX_MESSAGE_SPACING: Final = 0.5
+# Resends of a timed-out request.
+VALLOX_REQUEST_RETRIES: Final = 5
 
 NO_TIME_LIMIT: Final = 65535
 

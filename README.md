@@ -215,11 +215,16 @@ error is recorded in `failed`.
 
 `modbus-connection` sends every request once. Single Modbus RTU responses can
 get lost on a real installation, so `ValloxDevice` resends each individual
-request that raises `ModbusTimeoutError`, up to 3 times
-(`VALLOX_REQUEST_RETRIES`, as in the Home Assistant YAML Modbus integration).
-One request is therefore sent at most 4 times. This applies to every read,
-every write, and every step of `async_set_profile()`, including the read of
-the configured duration.
+request that raises `ModbusTimeoutError`, up to 5 times
+(`VALLOX_REQUEST_RETRIES`). One request is therefore sent at most 6 times.
+This applies to every read, every write and every step of
+`async_set_profile()`, including the read of the configured duration.
+
+The validated unit answered every request within about 15 ms, but left some
+requests unanswered for up to a few seconds. `ValloxDevice` therefore asks the
+link for a 1 second timeout (`VALLOX_TIMEOUT`) and keeps 500 ms between
+requests (`VALLOX_MESSAGE_SPACING`), so a lost response costs about
+1.5 seconds; see `docs/hardware-validation.md`.
 
 - Only `ModbusTimeoutError` is retried. `ModbusConnectionError`, Modbus
   exception responses such as `IllegalDataAddressError`, and protocol errors
@@ -230,13 +235,13 @@ the configured duration.
 - Retries happen per request, not per component, so a component with several
   read blocks only resends the block that timed out.
 - If the device does not answer at all, a poll gives up after the first request
-  has used its retries and raises `ModbusTimeoutError`. With the 5 second
-  timeout this takes about 20 seconds.
+  has used its retries and raises `ModbusTimeoutError`. With the 1 second
+  timeout and the spacing between requests this takes about 9 seconds.
 - `ValloxPartialWriteError` is raised only if a step of a profile change still
   fails after its retries.
 - Each retry is logged at debug level on the `vallox_modbus.retry` logger with
   function, register, and attempt, for example
-  `write_register(4612, 0) timed out, retrying (attempt 2 of 4): ...`.
+  `write_register(4612, 0) timed out, retrying (attempt 2 of 6): ...`.
 
 Write methods are exposed as explicit semantic operations on `ValloxDevice`,
 such as `async_set_power()`, `async_set_profile()`,
