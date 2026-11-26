@@ -31,8 +31,8 @@ Details of each validation run are in the [History](#history).
 | --- | --- | --- |
 | Read paths | `async_update_readings()`<br>`async_update_settings()`<br>`script/query.py --details --settings` | ✅ |
 | Read groups | measurements, runtime, inputs, optional sensors, settings, configuration | ✅ |
-| Timer switches | `21766`, `21767`, `21772` | ⚠️ `21767` off and on, `21766` and `21772` only on |
-| Filter change date | `20546..20548` | ⚠️ not validated |
+| Timer switches | `21766`, `21767`, `21772` | ⚠️ `21766` and `21767` off and on, `21772` only on |
+| Filter change date | `20546..20548` | ✅ |
 
 ### Writes
 
@@ -55,7 +55,7 @@ Details of each validation run are in the [History](#history).
 
 | Area | Behavior | Status |
 | --- | --- | --- |
-| Request retries | each timed-out request resent up to 3 times | ⚠️ not validated |
+| Request retries | 1 second timeout, 500 ms between requests, each timed-out request resent up to 5 times | ✅ |
 
 ## Known Behavior
 
@@ -73,6 +73,8 @@ Reads:
   documented no-sensor marker for individual VOC sensors is `65535`.
 - Optional temperature reported a very low celsius value; this was left as
   reported because no register-specific no-sensor marker was verified.
+- The filter change date registers `20546..20548` hold day, month and the
+  year as `YY` of `20YY`.
 
 Writes:
 
@@ -97,9 +99,23 @@ Profiles and the MyVallox Control panel:
   a duration activates Fireplace and `remaining_profile_duration` is `None`.
   With the timer function On, `remaining_profile_duration` shows the configured
   Fireplace duration (`20545`).
+- Boost also has a timer function On/Off on the panel. With the timer function
+  Off while Boost runs, `21766` reads `0`, the unit sets the Boost timer `4612`
+  to `65535` (no time limit), Boost stays active and
+  `remaining_profile_duration` is `None`. Fireplace behaves the same: with its
+  timer function Off while it runs, `21767` reads `0` and `4613` reads
+  `65535`.
+- Changing from Boost to Fireplace on the panel set the Boost timer `4612` to
+  `0`.
 - While Extra (programmable mode) runs, the panel keeps showing the previous
   basic mode with the programmable input symbol, as the MyVallox Control manual
   describes.
+- Extra cannot be selected on the panel. Even while Extra runs, the panel
+  settings offer no timer function for it, unlike Boost and Custom mode, so
+  `21772` can only be switched over Modbus.
+- While defrosting was active, Boost selected on the panel did not start. How
+  the unit handles a Boost started over Modbus during defrosting is not yet
+  known.
 
 Communication:
 
@@ -114,9 +130,51 @@ Communication:
 - The earlier Home Assistant YAML Modbus setup used pymodbus with 3 retries per
   request, which hid these timeouts; `modbus-connection` sends every request
   once.
-- The library therefore resends each timed-out request up to 3 times; see
-  "Request Retries" in the README. Retries are logged at debug level, so a poor
-  line stays visible.
+- The library therefore resends each timed-out request, at first up to
+  3 times with a 5 second timeout; see "Request Retries" in the README.
+  Retries are logged at debug level, so a poor line stays visible.
+- With the retries, about a quarter of all requests still needed a second
+  attempt and nearly every readings poll had at least one timeout; no request
+  failed after its retries. Each timeout adds 5 seconds, so a poll then takes
+  11 to 22 seconds instead of about 1 second.
+- Replacing the CH340-based USB RS485 adapter with an FTDI FT232R-based adapter
+  with built-in termination did not change this pattern.
+- Almost every retry succeeded on the second attempt; with independent losses
+  at this rate, about one retry in four would have failed again. The timeouts
+  therefore depend on timing rather than on line noise. The cause is not yet
+  known; the library already keeps 150 ms between requests
+  (`VALLOX_MESSAGE_SPACING`), more than the 30 ms the earlier pymodbus YAML
+  setup waited.
+- A raw traffic log (`tmodbus.raw_traffic`) over 10 minutes showed that the
+  unit sends no byte at all for a timed-out request; no late, partial or
+  corrupted response arrived and no traffic from another master was seen.
+  Answered requests got their response after 11 to 12 ms. 17 of about 71
+  requests timed out and every retry 150 ms later was answered. The timer
+  switch reads `21766` and `21772` timed out in 10 of 18 polls, `4353` in 3 of
+  9 and `4609` in none.
+- With `VALLOX_MESSAGE_SPACING` raised to 500 ms in a temporary test, 10 of
+  about 71 requests timed out instead of 17 and 3 of 9 readings polls had no
+  timeout. The timeouts moved from `21766` and `21772` (1 of 18) to `4389`
+  (4 of 9), which twice also timed out on its retry after 5.5 seconds of
+  silence. A longer gap between requests therefore does not prevent the
+  timeouts; the unit appears not to answer during phases that do not depend
+  on the request timing.
+- With the timeout also lowered to 1 second in a temporary test, 7 of about
+  71 requests timed out on the first attempt and 5 of 9 readings polls had no
+  timeout. No response arrived later than 1 second. 3 of 10 retries timed out
+  again, but every request was answered by its third attempt, about 3 seconds
+  after the first. The longest readings poll took 7.7 seconds instead of up to
+  19.7 seconds.
+- With 1 second timeout, 500 ms spacing and 5 retries in a temporary test,
+  four profile changes (Boost, Home, Fireplace, Home) wrote 16 timer and basic
+  profile registers with FC06. Every write response arrived after 11 to 13 ms;
+  2 writes timed out once and succeeded on the second attempt. Overall 5 of
+  60 requests timed out on the first attempt and all succeeded on the second.
+  Two FC06 writes of the Home fan speed `20507` were answered after 10 to
+  15 ms and read back with the written value.
+- The library therefore uses a 1 second timeout (`VALLOX_TIMEOUT`), 500 ms
+  between requests (`VALLOX_MESSAGE_SPACING`) and up to 5 resends
+  (`VALLOX_REQUEST_RETRIES`).
 
 Vallox Modbus manual note:
 
@@ -148,10 +206,8 @@ device.timer_switches.extra_timer_enabled
 device.settings.filter_change_date, device.next_filter_change_date
 ```
 
-- [ ] Timer switches `21766` and `21772` read off when the Boost and Extra
-  timer functions are off.
-- [ ] Filter change date matches the user interface, including whether the
-  year register holds `YY` of `20YY`.
+- [ ] Timer switch `21772` reads off when the Extra timer function is off.
+  The panel cannot switch it, so this needs the timer switch write below.
 
 Bypass lock:
 
@@ -174,14 +230,12 @@ Profile sequence:
 - [ ] Record whether FC06 writes to `21766`, `21767`, and `21772` succeed.
   FC06 timed out on `20545` during earlier validation.
 
-Request retries:
+Boost during defrosting:
 
-- [ ] Enable debug logging for `vallox_modbus.retry` and run the Home Assistant
-  integration for at least 30 minutes; note how many retries are logged.
-- [ ] No settings or configuration entities become unavailable because of a
-  single timed-out request.
-- [ ] Repeat Boost -> Away profile changes; none raises
-  `ValloxPartialWriteError` unless the log shows 4 timed-out attempts.
+- [ ] While defrosting is active, `await device.async_set_profile(Profile.BOOST)`;
+  record whether `4612` keeps the configured duration or returns to `0`,
+  whether the fan speeds change and whether Boost starts after defrosting
+  ends.
 
 Filter change date write (diagnostic only, no library API):
 
@@ -300,3 +354,51 @@ integration:
 
 The register values were not read directly; the observations come from the
 integration's state and the unit's user interface.
+
+### 2026-11-26: Timer functions, filter change date and request retries
+
+Observed through the Home Assistant integration and the MyVallox Control
+panel:
+
+- Boost was started on the panel; `remaining_profile_duration` showed the
+  configured Boost duration of 15 minutes.
+- After the Boost timer function was set Off on the panel, the fan preset and
+  `profile` stayed Boost and `remaining_profile_duration` changed to `None`.
+- The integration diagnostics then showed `21766` = `0`, `4612` = `65535`,
+  `4609` = `0` (Home), `4613` and `4614` = `0` and the fan speed at the Boost
+  fan speed of 90 %. The unit itself had replaced the remaining Boost time
+  with `65535`.
+
+Fireplace timer function, changed on the panel from Boost to Fireplace and
+then with the Fireplace timer function set Off:
+
+- `profile` was Fireplace and `remaining_profile_duration` was `None`.
+- The integration diagnostics showed `21767` = `0`, `4613` = `65535`,
+  `4612` = `0`, `4614` = `0`, `4609` = `0` (Home), `21766` still `0` and the
+  fan speed at the Custom mode fan setting of 50 %.
+- After both timer functions were set On again and Boost was started on the
+  panel, `remaining_profile_duration` showed the remaining minutes again.
+  `async_set_profile(Profile.HOME)` from the integration then ended Boost.
+- `async_set_profile(Profile.EXTRA)` from the integration started Extra; the
+  panel showed the programmable input symbol and `remaining_profile_duration`
+  showed the remaining minutes. The panel settings offered no Extra timer
+  function.
+
+Request retries, with debug logging for `vallox_modbus.retry` during about
+1.5 hours of Home Assistant operation and repeated profile changes between
+Home, Boost and Fireplace; evaluated on a 40-minute log excerpt:
+
+- About 74 timed-out requests out of an estimated 300 were resent; 73
+  succeeded on the second attempt and one on the third. None reached the
+  fourth attempt.
+- 5 of them were writes during profile changes (`4612`, `4613`, `4614`, `4609`);
+  all profile changes completed without `ValloxPartialWriteError`.
+- Only 5 of about 38 readings polls had no timeout, but every readings and
+  settings poll succeeded, so no entity became unavailable.
+
+Filter change date, from the first diagnostics:
+
+- `20546..20548` read `20`, `2`, `25`; the panel showed 20.02.2025 as the last
+  filter change.
+- With the filter change interval `20537` of 180 days the next filter change
+  is 2025-08-19; remaining filter days `4620` read `0`.

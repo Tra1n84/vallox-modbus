@@ -74,7 +74,7 @@ class _Flaky:
 
 
 def _timeout() -> ModbusTimeoutError:
-    return ModbusTimeoutError("Response timeout after 5.0 seconds")
+    return ModbusTimeoutError("Response timeout after 1.0 seconds")
 
 
 def _capture_writes(unit) -> list:
@@ -411,10 +411,10 @@ async def test_each_retry_is_logged_at_debug_level(
         if record.name == "vallox_modbus.retry"
     )
     assert messages == [
-        "write_register(4612, 0) timed out, retrying (attempt 2 of 4): "
-        "Response timeout after 5.0 seconds",
-        "write_register(4612, 0) timed out, retrying (attempt 3 of 4): "
-        "Response timeout after 5.0 seconds",
+        "write_register(4612, 0) timed out, retrying "
+        f"(attempt 2 of {MAX_ATTEMPTS}): Response timeout after 1.0 seconds",
+        "write_register(4612, 0) timed out, retrying "
+        f"(attempt 3 of {MAX_ATTEMPTS}): Response timeout after 1.0 seconds",
     ]
 
 
